@@ -51,7 +51,7 @@ const PRESET_PRINCIPALS = [10_000, 50_000, 100_000, 1_000_000];
 const PRESET_RATES_YEARS = [5, 7, 10, 15, 20]; // 실제 시장
 const PRESET_RATES_WEEKS = [3, 5, 7, 10, 13];  // 가상은행 (3-13%)
 const PRESET_ADDITIONS = [0, 500, 1_000, 5_000, 10_000];
-const PRESET_RANGES = [1, 5, 10, 20];
+const PRESET_RANGES = [1, 5, 8, 10, 20];
 
 function getXTicks(max: number): number[] {
   // For small ranges, show every tick. For larger ranges, space 6 evenly.
@@ -80,10 +80,10 @@ export type ScrubChartProps = {
 export function ScrubChart({
   initialPrincipal = 10_000,
   initialRatePct = 10,
-  initialMode = 'years',
-  initialMaxTicks = 20,
+  initialMode = 'weeks',
+  initialMaxTicks = 8,
   initialAddition = 1_000,
-  initialScenario = 'regular',
+  initialScenario = 'one-time',
   initialTick = 8,
   actualHistory,
   actualLabel = '🔵 나의 실제',
@@ -262,24 +262,6 @@ export function ScrubChart({
             <button
               type="button"
               role="tab"
-              aria-selected={mode === 'years'}
-              onClick={() => changeMode('years')}
-              style={{
-                padding: '6px 14px',
-                border: 'none',
-                background: mode === 'years' ? 'var(--primary)' : 'var(--surface-2)',
-                color: mode === 'years' ? 'white' : 'var(--text-muted)',
-                borderRadius: 'var(--r-pill) 0 0 var(--r-pill)',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-              }}
-            >
-              1년 단위
-            </button>
-            <button
-              type="button"
-              role="tab"
               aria-selected={mode === 'weeks'}
               onClick={() => changeMode('weeks')}
               style={{
@@ -287,13 +269,31 @@ export function ScrubChart({
                 border: 'none',
                 background: mode === 'weeks' ? 'var(--primary)' : 'var(--surface-2)',
                 color: mode === 'weeks' ? 'white' : 'var(--text-muted)',
-                borderRadius: '0 var(--r-pill) var(--r-pill) 0',
+                borderRadius: 'var(--r-pill) 0 0 var(--r-pill)',
                 fontWeight: 600,
                 fontSize: '0.85rem',
                 cursor: 'pointer',
               }}
             >
               가상 1주 단위
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'years'}
+              onClick={() => changeMode('years')}
+              style={{
+                padding: '6px 14px',
+                border: 'none',
+                background: mode === 'years' ? 'var(--primary)' : 'var(--surface-2)',
+                color: mode === 'years' ? 'white' : 'var(--text-muted)',
+                borderRadius: '0 var(--r-pill) var(--r-pill) 0',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+              }}
+            >
+              1년 단위
             </button>
           </div>
         </div>
