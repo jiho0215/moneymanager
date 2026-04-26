@@ -5,6 +5,8 @@ import { getSupabaseServerClient } from '@/lib/db/client';
 import { GoalBanner, GuideCard } from '@/lib/ui/goal-banner';
 import { RememberKidOnMount } from '@/lib/ui/remember-on-mount';
 import { ScrubChart, type ActualHistoryPoint } from '@/lib/ui/scrub-chart';
+import { SubmitButton } from '@/lib/ui/submit-button';
+import { kidDeposit } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +14,12 @@ function fmt(n: number): string {
   return n.toLocaleString('ko-KR') + '원';
 }
 
-export default async function KidDashboardPage() {
+export default async function KidDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ deposited?: string; error?: string }>;
+}) {
+  const sp = await searchParams;
   const ctx = await getMyKidAccount();
   if (!ctx) redirect('/login');
 
@@ -59,6 +66,19 @@ export default async function KidDashboardPage() {
         <div className="soft" style={{ marginBottom: 4 }}>안녕하세요</div>
         <h1 className="h1">🌱 {membership.display_name}</h1>
       </header>
+
+      {sp.error && (
+        <div className="alert alert-error fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
+          <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+          <div>{decodeURIComponent(sp.error)}</div>
+        </div>
+      )}
+      {sp.deposited && (
+        <div className="alert alert-success fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
+          <span style={{ fontSize: '1.2rem' }}>💰</span>
+          <div>{fmt(Number(sp.deposited))} 통장에 들어갔어요!</div>
+        </div>
+      )}
 
       <section className="card" style={{ marginBottom: 'var(--sp-5)', padding: 'var(--sp-5)' }}>
         <div className="row-between" style={{ marginBottom: 'var(--sp-4)' }}>
@@ -156,9 +176,9 @@ function NextActivity({
   week: number;
   lastClaimed: number | null;
 }) {
-  if (canClaimNow) {
-    return (
-      <div className="stack-3">
+  return (
+    <div className="stack-3">
+      {canClaimNow ? (
         <Link
           href="/claim"
           className="btn btn-success btn-lg btn-block"
@@ -166,13 +186,7 @@ function NextActivity({
         >
           ① ✨ 산수 풀고 이번 주 이자 받기 →
         </Link>
-        <WaitOption label="② ⏳ 기다리기 — 단, 이번 주 안에 풀어야 이자가 들어가요." muted />
-      </div>
-    );
-  }
-  if (week === 0) {
-    return (
-      <div className="stack-3">
+      ) : week === 0 ? (
         <div
           style={{
             padding: 'var(--sp-4)',
@@ -184,25 +198,83 @@ function NextActivity({
         >
           ① 산수 풀기 — 첫 일요일 첫 주 시작 후 가능
         </div>
-        <WaitOption label="② ⏳ 그때까지 기다리기" />
-      </div>
-    );
-  }
+      ) : (
+        <div
+          style={{
+            padding: 'var(--sp-4)',
+            background: 'var(--surface-2)',
+            borderRadius: 'var(--r-sm)',
+            opacity: 0.6,
+            textAlign: 'center',
+          }}
+        >
+          ① 산수 풀기 — ✅ {lastClaimed}주차 청구 완료
+        </div>
+      )}
+
+      <WaitOption
+        label={
+          canClaimNow
+            ? '② ⏳ 기다리기 — 단, 이번 주 안에 풀어야 이자가 들어가요.'
+            : week === 0
+            ? '② ⏳ 그때까지 기다리기'
+            : '② ⏳ 다음 일요일까지 기다리기'
+        }
+        muted={canClaimNow}
+      />
+
+      <DepositOption />
+    </div>
+  );
+}
+
+function DepositOption() {
   return (
-    <div className="stack-3">
+    <details
+      style={{
+        background: 'var(--free-bg)',
+        border: '1px solid var(--free)',
+        borderRadius: 'var(--r-sm)',
+        overflow: 'hidden',
+      }}
+    >
+      <summary
+        style={{
+          padding: 'var(--sp-4)',
+          textAlign: 'center',
+          cursor: 'pointer',
+          listStyle: 'none',
+          userSelect: 'none',
+          color: 'var(--free-deep)',
+          fontWeight: 600,
+        }}
+      >
+        ③ 💰 저금하기 <span style={{ opacity: 0.7, fontSize: '0.85rem', fontWeight: 400 }}>(모았던 돈을 통장에 넣어요)</span>
+      </summary>
       <div
         style={{
           padding: 'var(--sp-4)',
-          background: 'var(--surface-2)',
-          borderRadius: 'var(--r-sm)',
-          opacity: 0.6,
-          textAlign: 'center',
+          background: 'rgba(255,255,255,0.7)',
+          borderTop: '1px solid var(--border)',
         }}
       >
-        ① 산수 풀기 — ✅ {lastClaimed}주차 청구 완료
+        <p className="muted" style={{ margin: '0 0 var(--sp-3)', fontSize: '0.9rem' }}>
+          저금한 돈도 매주 청구할 때 함께 이자가 붙어요. 한 번 넣은 돈은 빼지 않고 끝까지 키워보자!
+        </p>
+        <form action={kidDeposit} className="row gap-2">
+          <input
+            type="number"
+            name="amount"
+            placeholder="얼마? (100원 단위)"
+            min={100}
+            step={100}
+            required
+            style={{ flex: 1 }}
+          />
+          <SubmitButton variant="warn" pendingText="넣는 중...">통장에 넣기</SubmitButton>
+        </form>
       </div>
-      <WaitOption label="② ⏳ 다음 일요일까지 기다리기" />
-    </div>
+    </details>
   );
 }
 
