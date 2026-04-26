@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getGuardianFamilyView } from '@/lib/db/queries';
+import { getSupabaseAdmin } from '@/lib/auth/admin';
+import { CopyButton } from '@/lib/ui/copy-button';
 
 export const dynamic = 'force-dynamic';
 function fmt(n: number) { return n.toLocaleString('ko-KR') + '원'; }
@@ -20,6 +22,17 @@ export default async function GuardianHomePage() {
     redirect('/onboarding');
   }
 
+  // Fetch invite tokens for kids that haven't claimed login yet.
+  const admin = getSupabaseAdmin();
+  const kidIds = kids.map((k) => k.id);
+  const { data: pendingClaims } = kidIds.length
+    ? await admin.from('memberships').select('id, display_name, invite_token').in('id', kidIds).not('invite_token', 'is', null)
+    : { data: [] };
+  const inviteByKid = new Map<string, { displayName: string; token: string }>();
+  for (const p of (pendingClaims ?? []) as Array<{ id: string; display_name: string; invite_token: string }>) {
+    inviteByKid.set(p.id, { displayName: p.display_name, token: p.invite_token });
+  }
+
   return (
     <main className="page page-wide">
       <header style={{ marginBottom: 'var(--sp-4)' }}>
@@ -30,6 +43,39 @@ export default async function GuardianHomePage() {
       <p className="muted" style={{ marginBottom: 'var(--sp-5)' }}>
         자녀의 통장을 한눈에 확인할 수 있어요.
       </p>
+
+      {Array.from(inviteByKid.entries()).map(([kidId, info]) => {
+        const url = `https://moneybean.vercel.app/join/${info.token}`;
+        return (
+          <section
+            key={`invite-${kidId}`}
+            className="card stack-3"
+            style={{ background: 'var(--bonus-bg)', borderColor: 'var(--bonus)', marginBottom: 'var(--sp-4)' }}
+          >
+            <div>
+              <h2 className="h3" style={{ margin: '0 0 4px' }}>
+                🔗 {info.displayName} 의 가입 링크
+              </h2>
+              <p className="muted" style={{ margin: 0, fontSize: '0.88rem' }}>
+                자녀가 이 링크로 들어가서 본인 아이디/비밀번호를 만들고 통장을 시작해요.
+              </p>
+            </div>
+            <div
+              style={{
+                background: 'white',
+                padding: 'var(--sp-3)',
+                borderRadius: 'var(--r-sm)',
+                wordBreak: 'break-all',
+                fontFamily: 'monospace',
+                fontSize: '0.85rem',
+              }}
+            >
+              {url}
+            </div>
+            <CopyButton value={url} label="링크 복사" />
+          </section>
+        );
+      })}
 
       <div className="stack-4">
         {kids.map((kid) => {
