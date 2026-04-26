@@ -1,16 +1,28 @@
 import Link from 'next/link';
 import { ScrubChart } from '@/lib/ui/scrub-chart';
+import { BackButton } from '@/lib/ui/back-button';
+import { getSupabaseServerClient } from '@/lib/db/client';
 
 export const metadata = {
   title: '단리 vs 복리 — Compound Learning System',
 };
 
-export default function LearnPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function LearnPage() {
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isLoggedIn = !!user;
+
   return (
     <main className="page" style={{ paddingTop: 24 }}>
-      <Link href="/" className="btn btn-ghost" style={{ marginBottom: 'var(--sp-3)' }}>
-        ← 홈으로
-      </Link>
+      {isLoggedIn ? (
+        <BackButton />
+      ) : (
+        <Link href="/" className="btn btn-ghost" style={{ marginBottom: 'var(--sp-3)' }}>
+          ← 홈으로
+        </Link>
+      )}
 
       <header style={{ marginBottom: 'var(--sp-5)' }}>
         <div className="soft" style={{ marginBottom: 4 }}>학습 도구</div>
