@@ -169,6 +169,29 @@ export function ScrubChart({
     return arr;
   }, [principal, rateBp, addition, maxTicks, scenario]);
 
+  // Doubling milestones: weeks where the compound line first crosses 2×, 4×, 8× principal.
+  // Only meaningful for one-time scenario; in 'regular' the principal grows so doublings shift.
+  const doublings = useMemo(() => {
+    if (scenario !== 'one-time' || principal <= 0) return [];
+    const targets = [2, 4, 8];
+    const result: Array<{ multiple: number; week: number; value: number }> = [];
+    for (const m of targets) {
+      const target = principal * m;
+      const idx = series.findIndex((p) => p.compound >= target);
+      if (idx > 0 && idx <= maxTicks) {
+        result.push({ multiple: m, week: series[idx]!.t, value: series[idx]!.compound });
+      }
+    }
+    return result;
+  }, [series, principal, maxTicks, scenario]);
+
+  // Doubling time in periods: log(2) / log(1 + r). Round to nearest int for display.
+  const doublingPeriod = useMemo(() => {
+    const r = rateBp / 10000;
+    if (r <= 0) return null;
+    return Math.round(Math.log(2) / Math.log(1 + r));
+  }, [rateBp]);
+
   // Y-axis bounds include the actual-history overlay (which may dip below
   // current principal — e.g., past snapshots before recent deposits).
   const actualBalances = (actualHistory ?? []).map((p) => p.balance);
@@ -429,6 +452,36 @@ export function ScrubChart({
           <path d={simplePath} fill="none" stroke="#f59e0b" strokeWidth={2.5} strokeDasharray="2 4" />
           <path d={compoundPath} fill="none" stroke="#16a34a" strokeWidth={3.5} />
 
+          {/* Doubling milestones on the compound line */}
+          {doublings.map((d) => {
+            const cx = xScale(d.week);
+            const cy = yScale(d.value);
+            return (
+              <g key={`double-${d.multiple}`}>
+                <line
+                  x1={MARGIN.left}
+                  x2={cx}
+                  y1={cy}
+                  y2={cy}
+                  stroke="#16a34a"
+                  strokeDasharray="2 4"
+                  opacity={0.35}
+                />
+                <circle cx={cx} cy={cy} r={6} fill="#fef08a" stroke="#16a34a" strokeWidth={2} />
+                <text
+                  x={cx}
+                  y={cy - 12}
+                  fontSize={11}
+                  fontWeight={700}
+                  fill="#15803d"
+                  textAnchor="middle"
+                >
+                  🎉 {d.multiple}배
+                </text>
+              </g>
+            );
+          })}
+
           {/* Actual history overlay (kid's real progression) */}
           {actualHistory && actualHistory.length > 0 && (
             <>
@@ -510,6 +563,24 @@ export function ScrubChart({
             </span>
           )}
         </div>
+
+        {scenario === 'one-time' && doublingPeriod && doublingPeriod > 0 && doublingPeriod <= maxTicks * 2 && (
+          <div
+            style={{
+              marginTop: 'var(--sp-3)',
+              padding: '8px 14px',
+              background: '#fef3c7',
+              border: '1px solid #fbbf24',
+              borderRadius: 'var(--r-pill)',
+              textAlign: 'center',
+              fontSize: '0.88rem',
+              color: '#92400e',
+              fontWeight: 600,
+            }}
+          >
+            💎 약 {doublingPeriod}{unit}마다 돈이 두 배가 돼!
+          </div>
+        )}
       </div>
 
       {/* Live stats — three cards in a single row */}
