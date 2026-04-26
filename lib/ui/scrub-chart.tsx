@@ -48,7 +48,8 @@ function getMilestone(t: number): Milestone {
 }
 
 const PRESET_PRINCIPALS = [10_000, 50_000, 100_000, 1_000_000];
-const PRESET_RATES = [5, 7, 10, 15, 20];
+const PRESET_RATES_YEARS = [5, 7, 10, 15, 20]; // 실제 시장
+const PRESET_RATES_WEEKS = [3, 5, 7, 10, 13];  // 가상은행 (3-13%)
 const PRESET_ADDITIONS = [0, 500, 1_000, 5_000, 10_000];
 const PRESET_RANGES = [1, 5, 10, 20];
 
@@ -75,6 +76,15 @@ export function ScrubChart() {
   }
 
   const unit = mode === 'years' ? '년' : '주';
+  const presetRates = mode === 'years' ? PRESET_RATES_YEARS : PRESET_RATES_WEEKS;
+
+  function changeMode(newMode: Mode) {
+    setMode(newMode);
+    const newPresets = newMode === 'years' ? PRESET_RATES_YEARS : PRESET_RATES_WEEKS;
+    if (!newPresets.includes(ratePct)) {
+      setRatePct(10);
+    }
+  }
 
   function pickFromPointer(e: ReactPointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
@@ -113,9 +123,11 @@ export function ScrubChart() {
           compound: compoundPassiveAt(principal, rateBp, t),
         });
       } else {
+        // 꾸준히 적금: 단리 = 원금에만 이자 + 매년 적금 (linear)
         arr.push({
           t,
           piggy: piggyAt(principal, addition, t),
+          simple: simpleAt(principal, rateBp, t) + addition * t,
           compound: compoundActiveAt(principal, addition, rateBp, t),
         });
       }
@@ -135,10 +147,9 @@ export function ScrubChart() {
 
   const piggyPath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.piggy)}`).join(' ');
   const compoundPath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.compound)}`).join(' ');
-  const simplePath =
-    scenario === 'one-time'
-      ? series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.simple ?? p.piggy)}`).join(' ')
-      : '';
+  const simplePath = series
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.simple ?? p.piggy)}`)
+    .join(' ');
 
   const xTicks = getXTicks(maxTicks);
   const yTicks = [yMin, yMin + (yMax - yMin) * 0.25, yMin + (yMax - yMin) * 0.5, yMin + (yMax - yMin) * 0.75, yMax];
@@ -207,7 +218,7 @@ export function ScrubChart() {
               type="button"
               role="tab"
               aria-selected={mode === 'years'}
-              onClick={() => setMode('years')}
+              onClick={() => changeMode('years')}
               style={{
                 padding: '6px 14px',
                 border: 'none',
@@ -225,7 +236,7 @@ export function ScrubChart() {
               type="button"
               role="tab"
               aria-selected={mode === 'weeks'}
-              onClick={() => setMode('weeks')}
+              onClick={() => changeMode('weeks')}
               style={{
                 padding: '6px 14px',
                 border: 'none',
@@ -250,7 +261,7 @@ export function ScrubChart() {
           </ControlField>
 
           <ControlField label={`📈 이자율 (매 ${unit})`} value={`${ratePct}%`} valueColor="var(--experiment-deep)">
-            {PRESET_RATES.map((r) => (
+            {presetRates.map((r) => (
               <Chip key={r} active={ratePct === r} onClick={() => setRatePct(r)}>{r}%</Chip>
             ))}
           </ControlField>
@@ -367,11 +378,9 @@ export function ScrubChart() {
             </g>
           ))}
 
-          {/* Lines: piggy (bottom dashed) → simple (mid linear, one-time only) → compound (winner) */}
+          {/* Lines: piggy (dashed pink) → simple (dotted amber) → compound (solid green winner) */}
           <path d={piggyPath} fill="none" stroke="#ec4899" strokeWidth={2.5} strokeDasharray="6 4" />
-          {scenario === 'one-time' && simplePath && (
-            <path d={simplePath} fill="none" stroke="#f59e0b" strokeWidth={2.5} strokeDasharray="2 4" />
-          )}
+          <path d={simplePath} fill="none" stroke="#f59e0b" strokeWidth={2.5} strokeDasharray="2 4" />
           <path d={compoundPath} fill="none" stroke="#16a34a" strokeWidth={3.5} />
 
           {/* Vertical indicator */}
@@ -387,7 +396,7 @@ export function ScrubChart() {
 
           {/* Dots at current tick for each line */}
           <circle cx={xScale(tick)} cy={yScale(cur.piggy)} r={6} fill="#ec4899" stroke="white" strokeWidth={2} />
-          {scenario === 'one-time' && cur.simple !== undefined && (
+          {cur.simple !== undefined && (
             <circle cx={xScale(tick)} cy={yScale(cur.simple)} r={5} fill="#f59e0b" stroke="white" strokeWidth={2} />
           )}
           <circle cx={xScale(tick)} cy={yScale(cur.compound)} r={7} fill="#16a34a" stroke="white" strokeWidth={2.5} />
@@ -412,12 +421,10 @@ export function ScrubChart() {
             <span style={{ display: 'inline-block', width: 22, borderTop: '3px dashed #ec4899' }} />
             <span><strong>🐷 돼지저금통</strong> <span className="muted">{scenario === 'one-time' ? '이자 없이 그대로' : '이자 없이 적금'}</span></span>
           </span>
-          {scenario === 'one-time' && (
-            <span className="row gap-2" style={{ alignItems: 'center' }}>
-              <span style={{ display: 'inline-block', width: 22, borderTop: '3px dotted #f59e0b' }} />
-              <span><strong>🪙 단리</strong> <span className="muted">원금에만 이자</span></span>
-            </span>
-          )}
+          <span className="row gap-2" style={{ alignItems: 'center' }}>
+            <span style={{ display: 'inline-block', width: 22, borderTop: '3px dotted #f59e0b' }} />
+            <span><strong>🪙 단리</strong> <span className="muted">{scenario === 'one-time' ? '원금에만 이자' : '원금 이자 + 적금'}</span></span>
+          </span>
           <span className="row gap-2" style={{ alignItems: 'center' }}>
             <span style={{ display: 'inline-block', width: 22, borderTop: '4px solid #16a34a' }} />
             <span><strong>🌳 복리</strong> <span className="muted">{scenario === 'one-time' ? `${ratePct}%씩 자람` : `적금 + ${ratePct}% 이자`}</span></span>
@@ -438,12 +445,16 @@ export function ScrubChart() {
           }
           amount={cur.piggy}
         />
-        {scenario === 'one-time' && cur.simple !== undefined && (
+        {cur.simple !== undefined && (
           <ScenarioCard
             icon="🪙"
             tint="amber"
             label="단리"
-            subtitle={`원금에만 ${ratePct}% 이자`}
+            subtitle={
+              scenario === 'one-time'
+                ? `원금에만 ${ratePct}% 이자`
+                : `원금에 ${ratePct}% + 매${unit} +${fmtKRW(addition)}`
+            }
             amount={cur.simple}
           />
         )}
