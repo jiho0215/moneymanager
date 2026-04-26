@@ -51,7 +51,7 @@ const PRESET_PRINCIPALS = [10_000, 50_000, 100_000, 1_000_000];
 const PRESET_RATES_YEARS = [5, 7, 10, 15, 20]; // 실제 시장
 const PRESET_RATES_WEEKS = [3, 5, 7, 10, 13];  // 가상은행 (3-13%)
 const PRESET_ADDITIONS = [0, 500, 1_000, 5_000, 10_000];
-const PRESET_RANGES = [1, 5, 8, 20, 50, 100];
+const PRESET_RANGES = [1, 5, 8, 20, 50];
 
 function getXTicks(max: number): number[] {
   // For small ranges, show every tick. For larger ranges, space 6 evenly.
