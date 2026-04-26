@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getGuardianFamilyView } from '@/lib/db/queries';
-import { logout } from '@/app/(auth)/login/actions';
-import { SubmitButton } from '@/lib/ui/submit-button';
 
 export const dynamic = 'force-dynamic';
 function fmt(n: number) { return n.toLocaleString('ko-KR') + '원'; }
@@ -19,27 +17,14 @@ export default async function GuardianHomePage() {
 
   return (
     <main className="page page-wide">
-      <header className="row-between" style={{ marginBottom: 'var(--sp-5)' }}>
-        <div>
-          <div className="soft" style={{ marginBottom: 4 }}>안녕하세요</div>
-          <h1 className="h1">👨‍👩‍👧 {ctx.guardian.display_name}</h1>
-        </div>
-        <form action={logout}>
-          <SubmitButton variant="subtle" pendingText="..." style={{ padding: '8px 14px', fontSize: '0.85rem' }}>
-            로그아웃
-          </SubmitButton>
-        </form>
+      <header style={{ marginBottom: 'var(--sp-4)' }}>
+        <div className="soft" style={{ marginBottom: 4 }}>안녕하세요</div>
+        <h1 className="h1">👨‍👩‍👧 {ctx.guardian.display_name}</h1>
       </header>
 
       <p className="muted" style={{ marginBottom: 'var(--sp-5)' }}>
         자녀의 활동을 한눈에 확인할 수 있어요.
       </p>
-
-      <nav className="row gap-2" style={{ marginBottom: 'var(--sp-6)', flexWrap: 'wrap' }}>
-        <Link href="/kid-access" className="btn btn-success">🔑 자녀 로그인 코드</Link>
-        <Link href="/settings" className="btn btn-primary">⚙️ 설정 + 입금</Link>
-        <Link href="/audit" className="btn btn-subtle">📋 활동 기록</Link>
-      </nav>
 
       <div className="stack-4">
         {kids.map((kid) => {

@@ -131,7 +131,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         })}
       </div>
 
-      <p style={{ marginTop: 'var(--sp-5)', textAlign: 'center' }}><Link href="/guardian">← 대시보드로</Link></p>
     </main>
   );
 }

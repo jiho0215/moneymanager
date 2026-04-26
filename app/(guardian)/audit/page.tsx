@@ -119,7 +119,6 @@ export default async function AuditPage() {
         </table>
       </div>
 
-      <p style={{ marginTop: 'var(--sp-5)', textAlign: 'center' }}><Link href="/guardian">← 대시보드로</Link></p>
     </main>
   );
 }

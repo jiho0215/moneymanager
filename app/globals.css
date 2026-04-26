@@ -331,3 +331,67 @@ table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
 .badge-warn { background: var(--free-bg); color: var(--free-deep); }
 .badge-info { background: var(--bonus-bg); color: var(--bonus-deep); }
 .badge-muted { background: var(--surface-2); color: var(--text-muted); }
+
+/* === NavBar === */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--sp-5);
+}
+.navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: var(--r-md);
+  transition: background 120ms;
+  white-space: nowrap;
+}
+.navbar-brand:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
+.navbar-items {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.navbar-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: background 120ms, color 120ms;
+  white-space: nowrap;
+}
+.navbar-link:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
+.navbar-link-active {
+  background: var(--experiment-bg);
+  color: var(--experiment-deep);
+  font-weight: 600;
+}
+.navbar-link-active:hover { background: var(--experiment-bg); color: var(--experiment-deep); }
+.navbar-icon { font-size: 1.05rem; }
+@media (max-width: 560px) {
+  .navbar { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
+  .navbar-label { display: none; }
+  .navbar-link { padding: 8px 12px; }
+  .navbar-items { order: 3; width: 100%; justify-content: space-around; }
+}

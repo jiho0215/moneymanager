@@ -73,10 +73,6 @@ export default async function KidHistoryPage() {
           </tbody>
         </table>
       </div>
-
-      <p style={{ marginTop: 'var(--sp-5)', textAlign: 'center' }}>
-        <Link href="/dashboard">← 대시보드로</Link>
-      </p>
-    </main>
+</main>
   );
 }

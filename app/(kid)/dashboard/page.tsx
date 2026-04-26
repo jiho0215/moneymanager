@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
-import { logout } from '@/app/(auth)/login/actions';
 import { transferToExperiment } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
 import { GoalBanner, GuideCard } from '@/lib/ui/goal-banner';
@@ -39,16 +38,9 @@ export default async function KidDashboardPage() {
 
   return (
     <main className="page">
-      <header className="row-between" style={{ marginBottom: 'var(--sp-5)' }}>
-        <div>
-          <div className="soft" style={{ marginBottom: 4 }}>안녕하세요</div>
-          <h1 className="h1">🌱 {membership.display_name}</h1>
-        </div>
-        <form action={logout}>
-          <SubmitButton variant="subtle" pendingText="..." style={{ padding: '8px 14px', fontSize: '0.85rem' }}>
-            로그아웃
-          </SubmitButton>
-        </form>
+      <header style={{ marginBottom: 'var(--sp-4)' }}>
+        <div className="soft" style={{ marginBottom: 4 }}>안녕하세요</div>
+        <h1 className="h1">🌱 {membership.display_name}</h1>
       </header>
 
       <div style={{ marginBottom: 'var(--sp-5)' }}>
