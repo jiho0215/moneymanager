@@ -60,19 +60,8 @@ export function GoalBanner({
         <div className="goal-progress-fill" style={{ width: `${progressPct}%` }} />
       </div>
 
-      <div className="goal-stage-row" aria-label="주차별 진행">
-        {Array.from({ length: totalWeeks }, (_, i) => (
-          <div
-            key={i}
-            className={`goal-stage ${i < weekDone ? 'goal-stage-done' : ''}`}
-            title={`${i + 1}주차`}
-          />
-        ))}
-      </div>
-
-      <div className="row-between" style={{ marginTop: 6, fontSize: '0.82rem' }}>
+      <div style={{ marginTop: 6, fontSize: '0.82rem' }}>
         <span className="soft">{weekDone}/{totalWeeks}주차</span>
-        <span className="soft">8주 = 약 1년치 복리 경험</span>
       </div>
     </section>
   );
