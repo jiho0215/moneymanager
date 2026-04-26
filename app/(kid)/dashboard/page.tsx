@@ -36,6 +36,16 @@ export default async function KidDashboardPage({
   const lastClaimed = account.last_claimed_week_num !== null ? Number(account.last_claimed_week_num) : null;
   const canClaimNow = week > Number(account.week_num_started) && (lastClaimed === null || lastClaimed < week);
 
+  // First claimable date = epoch + 7 days. Format as "M월 D일 (요일)".
+  function firstClaimDateLabel(epochIso: string | null): string {
+    if (!epochIso) return '';
+    const firstClaimMs = new Date(epochIso).getTime() + 7 * 24 * 60 * 60 * 1000;
+    const kst = new Date(firstClaimMs + 9 * 60 * 60 * 1000);
+    const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][kst.getUTCDay()];
+    return `${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 (${dayOfWeek})`;
+  }
+  const firstClaimLabel = firstClaimDateLabel(String(account.epoch_kst ?? ''));
+
   const startingCapital = Number(account.starting_capital);
   const ratePct = Math.round(Number(account.weekly_growth_rate_bp ?? 1000) / 100);
 
@@ -126,7 +136,12 @@ export default async function KidDashboardPage({
 
       <section className="card stack-3" style={{ marginBottom: 'var(--sp-5)' }}>
         <h2 className="h3" style={{ margin: 0 }}>🎯 다음 할 일</h2>
-        <NextActivity canClaimNow={canClaimNow} week={week} lastClaimed={lastClaimed} />
+        <NextActivity
+          canClaimNow={canClaimNow}
+          week={week}
+          lastClaimed={lastClaimed}
+          firstClaimLabel={firstClaimLabel}
+        />
       </section>
 
       <div style={{ marginBottom: 'var(--sp-5)' }}>
@@ -168,7 +183,7 @@ export default async function KidDashboardPage({
         <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
           <li><strong>저금</strong>: 통장에 들어있는 너의 원금이에요.</li>
           <li><strong>이자</strong>: 통장 전체가 매주 10%씩 자라요.</li>
-          <li><strong>매주 일요일에 청구</strong>: 산수 한 문제 풀고 <strong>이번 주 이자</strong>를 통장에 넣기. 그 주 안에 안 하면 그 주 이자는 사라져요.</li>
+          <li><strong>일주일에 한 번 청구</strong>: 산수 한 문제 풀고 <strong>이번 주 이자</strong>를 통장에 넣기. 그 주 안에 안 하면 그 주 이자는 사라져요.</li>
         </ul>
       </GuideCard>
     </main>
@@ -179,10 +194,12 @@ function NextActivity({
   canClaimNow,
   week,
   lastClaimed,
+  firstClaimLabel,
 }: {
   canClaimNow: boolean;
   week: number;
   lastClaimed: number | null;
+  firstClaimLabel: string;
 }) {
   return (
     <div className="stack-3">
@@ -204,7 +221,7 @@ function NextActivity({
             textAlign: 'center',
           }}
         >
-          ① 산수 풀기 — 첫 일요일 첫 주 시작 후 가능
+          ① 산수 풀기 — <strong>{firstClaimLabel}</strong>부터 가능
         </div>
       ) : (
         <div
@@ -226,7 +243,7 @@ function NextActivity({
             ? '② ⏳ 기다리기 — 단, 이번 주 안에 풀어야 이자가 들어가요.'
             : week === 0
             ? '② ⏳ 그때까지 기다리기'
-            : '② ⏳ 다음 일요일까지 기다리기'
+            : '② ⏳ 다음 청구일까지 기다리기'
         }
         muted={canClaimNow}
       />

@@ -150,7 +150,7 @@ export function KidWizard({
             hideMilestone
           />
           <p className="muted" style={{ fontSize: '0.85rem', textAlign: 'center', margin: 0 }}>
-            확인 누르면 다음 일요일부터 통장이 시작돼!
+            확인 누르면 통장이 바로 시작되고, 7일 뒤부터 첫 청구할 수 있어!
           </p>
         </section>
       )}
