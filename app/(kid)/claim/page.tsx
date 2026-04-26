@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
+import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
 import { generateProblem } from '@/lib/domain/mathgen';
 import { submitClaimAnswer } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
@@ -29,34 +29,41 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
   });
 
   const sp = await searchParams;
+  const errorMsg = sp.error;
+  const remaining = sp.remaining;
 
   return (
-    <main style={{ maxWidth: '560px', margin: '0 auto', padding: '24px' }}>
-      <h1 style={{ marginBottom: '0.5rem' }}>✨ 이번 주 산수</h1>
-      <p style={{ color: '#666', marginBottom: '1.5rem' }}>
-        문제를 풀면 이번 주 이자가 잠금해제 됩니다 ({week}주차).
+    <main className="page page-narrow">
+      <div className="soft" style={{ marginBottom: 4 }}>{week}주차 청구</div>
+      <h1 className="h1" style={{ marginBottom: 'var(--sp-2)' }}>✨ 산수 한 문제</h1>
+      <p className="muted" style={{ marginBottom: 'var(--sp-5)' }}>
+        문제를 풀면 이번 주 이자가 잠금해제 돼요.
       </p>
 
-      {sp.error && (
-        <div style={{ padding: '12px', backgroundColor: '#fee', borderRadius: '6px', marginBottom: '1rem' }}>
-          {sp.error === 'wrong_answer'
-            ? `조금 다르네요! 다시 해볼래요? (${sp.remaining ?? ''}번 남음)`
-            : sp.error === 'attempts_exhausted'
-            ? '이번 주는 다음 주에 다시! 5번 다 썼어요.'
-            : sp.error}
+      {errorMsg && (
+        <div className="alert alert-error fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
+          <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+          <div>
+            {errorMsg === 'wrong_answer'
+              ? <><strong>조금 다르네요!</strong> 다시 해볼래요? <span className="soft">(남은 시도: {remaining ?? ''})</span></>
+              : errorMsg === 'attempts_exhausted'
+              ? <><strong>이번 주는 다음 주에 다시!</strong> 5번 다 썼어요. 다음 주에 새 기회.</>
+              : decodeURIComponent(errorMsg)}
+          </div>
         </div>
       )}
 
       <div
+        className="card fade-in"
         style={{
-          padding: '32px',
-          backgroundColor: '#fff8dc',
-          borderRadius: '12px',
-          fontSize: '1.5rem',
+          padding: 'var(--sp-7) var(--sp-5)',
+          fontSize: '1.75rem',
+          fontWeight: 700,
           textAlign: 'center',
-          fontWeight: 'bold',
-          marginBottom: '1rem',
-          minHeight: '120px',
+          marginBottom: 'var(--sp-4)',
+          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+          border: '2px solid var(--free)',
+          minHeight: '140px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -65,7 +72,7 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
         {problem.question}
       </div>
 
-      <form action={submitClaimAnswer} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <form action={submitClaimAnswer} className="stack-3">
         <input type="hidden" name="problemId" value={problem.id} />
         <input type="hidden" name="expectedAnswer" value={problem.expectedAnswer} />
         <input type="hidden" name="problemData" value={JSON.stringify(problem)} />
@@ -73,15 +80,23 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
         <input
           type="text"
           name="userAnswer"
-          placeholder="답"
+          placeholder="답을 적어보자"
           required
           autoComplete="off"
-          style={{ padding: '14px', fontSize: '1.4rem', textAlign: 'center', borderRadius: '8px', border: '2px solid #ddd' }}
+          autoFocus
+          style={{
+            padding: '18px',
+            fontSize: '1.6rem',
+            textAlign: 'center',
+            borderRadius: 'var(--r-md)',
+            border: '2px solid var(--border-strong)',
+            fontWeight: 600,
+          }}
         />
-        <SubmitButton variant="success" pendingText="확인 중..." style={{ padding: '14px', fontSize: '1.1rem', borderRadius: '8px' }}>
+        <SubmitButton variant="success" pendingText="확인 중..." style={{ padding: '16px', fontSize: '1.1rem' }}>
           제출하기
         </SubmitButton>
-        <Link href="/dashboard" style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
+        <Link href="/dashboard" className="btn btn-ghost" style={{ justifyContent: 'center' }}>
           ← 다음에 풀기
         </Link>
       </form>

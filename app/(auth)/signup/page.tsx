@@ -15,40 +15,19 @@ const PIPA_TEXT = `[개인정보 수집 및 이용 동의 — 만 14세 미만 �
 
 function ErrorAlert({ message, showLoginLink }: { message: string; showLoginLink: boolean }) {
   return (
-    <div
-      role="alert"
-      style={{
-        padding: '14px 18px',
-        backgroundColor: '#fee2e2',
-        border: '2px solid #ef4444',
-        borderRadius: '8px',
-        color: '#991b1b',
-        marginBottom: '1rem',
-        fontWeight: 500,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-        <span style={{ fontSize: '1.2rem' }}>⚠️</span>
-        <div style={{ flex: 1 }}>
-          <div>{message}</div>
-          {showLoginLink && (
-            <Link
-              href="/login"
-              style={{
-                display: 'inline-block',
-                marginTop: '8px',
-                padding: '6px 14px',
-                backgroundColor: '#991b1b',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '4px',
-                fontSize: '0.9rem',
-              }}
-            >
-              로그인 페이지로 이동 →
-            </Link>
-          )}
-        </div>
+    <div className="alert alert-error fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
+      <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+      <div style={{ flex: 1 }}>
+        <div>{message}</div>
+        {showLoginLink && (
+          <Link
+            href="/login"
+            className="btn btn-primary"
+            style={{ marginTop: 10, padding: '6px 14px', fontSize: '0.9rem' }}
+          >
+            로그인 페이지로 이동 →
+          </Link>
+        )}
       </div>
     </div>
   );
@@ -60,81 +39,77 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
   const showLoginLink = errorMsg?.includes('이미 가입된') ?? false;
 
   return (
-    <main style={{ maxWidth: '560px', margin: '0 auto', padding: '40px 24px' }}>
-      <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>🌱 가족 가입</h1>
-      <p style={{ color: '#666', marginBottom: '2rem' }}>보호자가 자녀 계정을 함께 생성합니다.</p>
+    <main className="page page-narrow">
+      <h1 className="h1" style={{ marginBottom: 'var(--sp-2)' }}>🌱 가족 가입</h1>
+      <p className="lead" style={{ marginBottom: 'var(--sp-5)' }}>
+        보호자가 자녀 계정을 함께 생성합니다.
+      </p>
 
       {errorMsg && <ErrorAlert message={errorMsg} showLoginLink={showLoginLink} />}
 
-      <form action={signupFamily} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <fieldset style={{ border: '1px solid #ddd', padding: '1rem', borderRadius: '8px' }}>
-          <legend style={{ padding: '0 8px', fontWeight: 'bold' }}>보호자 정보</legend>
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+      <form action={signupFamily} className="stack-4">
+        <fieldset className="stack-3">
+          <legend>보호자 정보</legend>
+          <label className="field">
             이메일 *
-            <input type="email" name="guardianEmail" required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
+            <input type="email" name="guardianEmail" required />
           </label>
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+          <label className="field">
             비밀번호 (8자 이상) *
-            <input type="password" name="guardianPassword" minLength={8} required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
+            <input type="password" name="guardianPassword" minLength={8} required />
           </label>
-          <label style={{ display: 'block' }}>
+          <label className="field">
             보호자 표시명 (선택)
-            <input type="text" name="guardianDisplayName" style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
+            <input type="text" name="guardianDisplayName" />
           </label>
         </fieldset>
 
-        <fieldset style={{ border: '1px solid #ddd', padding: '1rem', borderRadius: '8px' }}>
-          <legend style={{ padding: '0 8px', fontWeight: 'bold' }}>가족 + 자녀</legend>
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+        <fieldset className="stack-3">
+          <legend>가족 + 자녀</legend>
+          <label className="field">
             가족 이름 *
-            <input type="text" name="familyName" required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
+            <input type="text" name="familyName" required />
           </label>
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+          <label className="field">
             자녀 닉네임 *
-            <input type="text" name="kidNickname" required maxLength={20} style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
+            <input type="text" name="kidNickname" required maxLength={20} />
           </label>
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+          <label className="field">
             자녀 학년 (5 또는 6) *
-            <select name="kidGrade" required style={{ width: '100%', padding: '8px', marginTop: '4px' }}>
+            <select name="kidGrade" required>
               <option value="5">5학년</option>
               <option value="6">6학년</option>
             </select>
           </label>
-          <label style={{ display: 'block' }}>
+          <label className="field">
             시작 자금 (KRW, 추천 10,000원) *
-            <input type="number" name="startingCapital" defaultValue={10000} min={1000} max={1000000} step={1000} required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
+            <input type="number" name="startingCapital" defaultValue={10000} min={1000} max={1000000} step={1000} required />
           </label>
         </fieldset>
 
-        <fieldset style={{ border: '1px solid #ddd', padding: '1rem', borderRadius: '8px' }}>
-          <legend style={{ padding: '0 8px', fontWeight: 'bold' }}>법정대리인 동의 (PIPA) *</legend>
-          <pre
-            style={{
-              fontSize: '0.85rem',
-              whiteSpace: 'pre-wrap',
-              backgroundColor: '#f7f7f7',
-              padding: '12px',
-              borderRadius: '4px',
-              maxHeight: '200px',
-              overflow: 'auto',
-            }}
-          >
+        <fieldset className="stack-3">
+          <legend>법정대리인 동의 (PIPA) *</legend>
+          <pre style={{
+            fontSize: '0.85rem', whiteSpace: 'pre-wrap', background: 'var(--surface-2)',
+            padding: 'var(--sp-3)', borderRadius: 'var(--r-sm)',
+            maxHeight: '180px', overflow: 'auto', margin: 0,
+          }}>
             {PIPA_TEXT}
           </pre>
-          <label style={{ display: 'block', marginTop: '0.5rem' }}>
-            <input type="checkbox" name="consent" required /> 위 내용에 동의합니다. *
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.95rem' }}>
+            <input type="checkbox" name="consent" required style={{ width: 18, height: 18 }} />
+            위 내용에 동의합니다. *
           </label>
         </fieldset>
 
-        {/* Error also shown right above the submit button so it's visible regardless of scroll */}
         {errorMsg && <ErrorAlert message={errorMsg} showLoginLink={showLoginLink} />}
 
-        <SubmitButton variant="primary" pendingText="가족 만드는 중...">
+        <SubmitButton variant="primary" pendingText="가족 만드는 중..." style={{ padding: '14px', fontSize: '1.05rem' }}>
           가족 만들기
         </SubmitButton>
       </form>
 
-      <p style={{ marginTop: '1rem', textAlign: 'center', color: '#666' }}>
+      <p style={{ marginTop: 'var(--sp-5)', textAlign: 'center' }} className="muted">
         이미 계정이 있으신가요? <Link href="/login">로그인</Link>
       </p>
     </main>
