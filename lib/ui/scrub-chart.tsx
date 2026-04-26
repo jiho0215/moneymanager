@@ -327,27 +327,27 @@ export function ScrubChart({
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--sp-3)' }}>
-          <ControlField label="💰 시작 원금" value={fmtFull(principal)} valueColor="var(--text)">
+          <ControlField label="💰 시작 원금">
             {PRESET_PRINCIPALS.map((p) => (
               <Chip key={p} active={principal === p} onClick={() => setPrincipal(p)}>{fmtKRW(p)}</Chip>
             ))}
           </ControlField>
 
-          <ControlField label={`📈 이자율 (매 ${unit})`} value={`${ratePct}%`} valueColor="var(--experiment-deep)">
+          <ControlField label={`📈 이자율 (매 ${unit})`}>
             {presetRates.map((r) => (
               <Chip key={r} active={ratePct === r} onClick={() => setRatePct(r)}>{r}%</Chip>
             ))}
           </ControlField>
 
           {scenario === 'regular' && (
-            <ControlField label={`💵 매 ${unit} 적금`} value={fmtFull(addition)} valueColor="#ec4899">
+            <ControlField label={`💵 매 ${unit} 적금`}>
               {PRESET_ADDITIONS.map((a) => (
                 <Chip key={a} active={addition === a} onClick={() => setAddition(a)}>{a === 0 ? '0' : fmtKRW(a)}</Chip>
               ))}
             </ControlField>
           )}
 
-          <ControlField label={`📅 기간 (최대 ${unit})`} value={`${maxTicks}${unit}`} valueColor="var(--bonus-deep)">
+          <ControlField label={`📅 기간 (최대 ${unit})`}>
             {PRESET_RANGES.map((r) => (
               <Chip key={r} active={maxTicks === r} onClick={() => changeMaxTicks(r)}>{r}{unit}</Chip>
             ))}
@@ -787,20 +787,15 @@ function InterestBreakdown({
 
 function ControlField({
   label,
-  value,
-  valueColor,
   children,
 }: {
   label: string;
-  value: string;
-  valueColor: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <div className="label" style={{ marginBottom: 6 }}>{label}</div>
-      <div className="amount" style={{ fontSize: '1.15rem', color: valueColor }}>{value}</div>
-      <div className="row gap-1" style={{ marginTop: 8, flexWrap: 'wrap' }}>{children}</div>
+      <div className="label" style={{ marginBottom: 8 }}>{label}</div>
+      <div className="row gap-1" style={{ flexWrap: 'wrap' }}>{children}</div>
     </div>
   );
 }
