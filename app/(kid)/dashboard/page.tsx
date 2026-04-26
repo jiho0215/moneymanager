@@ -60,24 +60,6 @@ export default async function KidDashboardPage() {
         <h1 className="h1">🌱 {membership.display_name}</h1>
       </header>
 
-      <div style={{ marginBottom: 'var(--sp-5)' }}>
-        <GoalBanner
-          startingBalance={Number(account.starting_capital)}
-          currentBalance={total}
-          weeklyGrowthRateBp={Number(account.weekly_growth_rate_bp ?? 1000)}
-          currentWeekNum={week}
-          lastClaimedWeekNum={lastClaimed}
-          totalWeeks={8}
-          kidName={membership.display_name}
-        />
-      </div>
-
-      <section className="card stack-3" style={{ marginBottom: 'var(--sp-5)' }}>
-        <h2 className="h3" style={{ margin: 0 }}>🎯 다음 할 일</h2>
-        <NextActivity canClaimNow={canClaimNow} week={week} lastClaimed={lastClaimed} />
-      </section>
-
-
       <section className="card" style={{ marginBottom: 'var(--sp-5)', padding: 'var(--sp-5)' }}>
         <div className="row-between" style={{ marginBottom: 'var(--sp-4)' }}>
           <h2 className="h3" style={{ margin: 0 }}>💰 내 통장</h2>
@@ -99,10 +81,7 @@ export default async function KidDashboardPage() {
 
         <div
           className="stack-2"
-          style={{
-            paddingTop: 'var(--sp-3)',
-            borderTop: '1px dashed var(--border)',
-          }}
+          style={{ paddingTop: 'var(--sp-3)', borderTop: '1px dashed var(--border)' }}
         >
           <div className="row-between">
             <span className="muted">📥 저금 (원금)</span>
@@ -117,31 +96,24 @@ export default async function KidDashboardPage() {
         </div>
       </section>
 
-      <section className="stack-4" style={{ marginBottom: 'var(--sp-5)' }}>
-        <div className="card stack-2">
-          <h2 className="h3" style={{ margin: 0 }}>📐 내 저금 계획</h2>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 'var(--sp-2) var(--sp-3)',
-              fontSize: '0.92rem',
-            }}
-          >
-            <div className="muted">시작 원금</div>
-            <div style={{ fontWeight: 600 }}>{fmt(startingCapital)}</div>
-            <div className="muted">저금 방식</div>
-            <div style={{ fontWeight: 600 }}>매주 산수 풀고 청구 (능동 복리)</div>
-            <div className="muted">주간 이자</div>
-            <div style={{ fontWeight: 600 }}>{ratePct}% / 주</div>
-            <div className="muted">기간</div>
-            <div style={{ fontWeight: 600 }}>8주 (≈ 1년치 복리 경험)</div>
-          </div>
-          <p className="muted" style={{ margin: 0, fontSize: '0.88rem' }}>
-            <strong style={{ color: '#2563eb' }}>파란선</strong>이 너의 실제 통장이에요. <strong style={{ color: '#16a34a' }}>초록선(복리)</strong>과 가까이 붙어있을수록 매주 잘 청구한 거예요.
-          </p>
-        </div>
+      <section className="card stack-3" style={{ marginBottom: 'var(--sp-5)' }}>
+        <h2 className="h3" style={{ margin: 0 }}>🎯 다음 할 일</h2>
+        <NextActivity canClaimNow={canClaimNow} week={week} lastClaimed={lastClaimed} />
+      </section>
 
+      <div style={{ marginBottom: 'var(--sp-5)' }}>
+        <GoalBanner
+          startingBalance={startingCapital}
+          currentBalance={total}
+          weeklyGrowthRateBp={Number(account.weekly_growth_rate_bp ?? 1000)}
+          currentWeekNum={week}
+          lastClaimedWeekNum={lastClaimed}
+          totalWeeks={8}
+          kidName={membership.display_name}
+        />
+      </div>
+
+      <section className="stack-4" style={{ marginBottom: 'var(--sp-5)' }}>
         <ScrubChart
           initialPrincipal={startingCapital}
           initialRatePct={ratePct}
@@ -152,6 +124,9 @@ export default async function KidDashboardPage() {
           initialTick={Math.min(8, Math.max(0, week))}
           actualHistory={actualHistory}
           actualLabel="🔵 나의 실제"
+          hideScenarioTabs
+          hideControls
+          hideBreakdown
         />
       </section>
 

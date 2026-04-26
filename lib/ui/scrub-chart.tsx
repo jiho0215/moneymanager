@@ -69,6 +69,10 @@ export type ScrubChartProps = {
   initialTick?: number;
   actualHistory?: ActualHistoryPoint[];
   actualLabel?: string;
+  hideScenarioTabs?: boolean;
+  hideControls?: boolean;
+  hideBreakdown?: boolean;
+  hideMilestone?: boolean;
 };
 
 export function ScrubChart({
@@ -81,6 +85,10 @@ export function ScrubChart({
   initialTick = 8,
   actualHistory,
   actualLabel = '🔵 나의 실제',
+  hideScenarioTabs = false,
+  hideControls = false,
+  hideBreakdown = false,
+  hideMilestone = false,
 }: ScrubChartProps = {}) {
   const [tick, setTick] = useState(initialTick);
   const [maxTicks, setMaxTicks] = useState(initialMaxTicks);
@@ -191,6 +199,7 @@ export function ScrubChart({
   return (
     <div className="stack-4">
       {/* Scenario tabs */}
+      {!hideScenarioTabs && (
       <div className="card" style={{ padding: 'var(--sp-2)' }}>
         <div role="tablist" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-2)' }}>
           <button
@@ -239,8 +248,10 @@ export function ScrubChart({
           </button>
         </div>
       </div>
+      )}
 
       {/* Controls */}
+      {!hideControls && (
       <div className="card stack-3">
         <div className="row-between" style={{ flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
           <strong>🔧 조건을 바꿔봐</strong>
@@ -318,6 +329,7 @@ export function ScrubChart({
             : '🔔 우리 가족 시스템은 1주에 10% — 1주가 1년인 셈! 8주 = 8년 압축.'}
         </p>
       </div>
+      )}
 
       {/* Chart */}
       <div
@@ -538,11 +550,13 @@ export function ScrubChart({
       </div>
 
       {/* Principal vs interest breakdown for compound */}
-      <InterestBreakdown
-        totalCompound={cur.compound}
-        principalContributed={scenario === 'one-time' ? principal : principal + addition * tick}
-        unit={unit}
-      />
+      {!hideBreakdown && (
+        <InterestBreakdown
+          totalCompound={cur.compound}
+          principalContributed={scenario === 'one-time' ? principal : principal + addition * tick}
+          unit={unit}
+        />
+      )}
 
       {/* Multiplier vs piggy */}
       {cur.piggy > 0 && cur.compound > cur.piggy && (
@@ -565,20 +579,22 @@ export function ScrubChart({
       )}
 
       {/* Milestone narrative */}
-      <div
-        key={milestone.title}
-        className="card fade-in"
-        style={{
-          background: 'linear-gradient(135deg, #ecfdf5 0%, #dbeafe 100%)',
-          borderColor: 'var(--experiment)',
-          textAlign: 'center',
-          padding: 'var(--sp-5)',
-        }}
-      >
-        <div style={{ fontSize: '2.5rem', marginBottom: 'var(--sp-2)' }}>{milestone.emoji}</div>
-        <div className="h2" style={{ marginBottom: 'var(--sp-2)' }}>{milestone.title}</div>
-        <div className="muted" style={{ fontSize: '0.95rem' }}>{milestone.sub}</div>
-      </div>
+      {!hideMilestone && (
+        <div
+          key={milestone.title}
+          className="card fade-in"
+          style={{
+            background: 'linear-gradient(135deg, #ecfdf5 0%, #dbeafe 100%)',
+            borderColor: 'var(--experiment)',
+            textAlign: 'center',
+            padding: 'var(--sp-5)',
+          }}
+        >
+          <div style={{ fontSize: '2.5rem', marginBottom: 'var(--sp-2)' }}>{milestone.emoji}</div>
+          <div className="h2" style={{ marginBottom: 'var(--sp-2)' }}>{milestone.title}</div>
+          <div className="muted" style={{ fontSize: '0.95rem' }}>{milestone.sub}</div>
+        </div>
+      )}
     </div>
   );
 }
