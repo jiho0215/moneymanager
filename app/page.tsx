@@ -32,9 +32,9 @@ export default function HomePage() {
         <div className="grid-3">
           <div>
             <div style={{ fontSize: '2rem', marginBottom: 6 }}>🌱</div>
-            <strong>1주차</strong>
+            <strong>0주차</strong>
             <p className="muted" style={{ margin: '4px 0 0', fontSize: '0.92rem' }}>
-              실험영역 10,000원으로 시작
+              통장 10,000원으로 시작
             </p>
           </div>
           <div>
@@ -52,33 +52,43 @@ export default function HomePage() {
             </p>
           </div>
         </div>
+        <p className="soft" style={{ margin: 0, fontSize: '0.85rem' }}>
+          매주 일요일에 산수 한 문제 풀고 이번 주 이자(통장 전체의 10%)를 받는 단순한 약속.
+          한 주 놓치면 그 주 이자는 사라져요 — 의식이 가치예요.
+        </p>
       </section>
 
       <section className="card stack-4">
         <h2 className="h2">💡 어떻게 작동하나요?</h2>
         <div className="stack-3" style={{ fontSize: '0.95rem', lineHeight: 1.7 }}>
           <div>
-            <strong>1. 부모가 가족을 만들어요</strong>
+            <strong>1. 보호자가 가족 가입</strong>
             <p className="muted" style={{ margin: '4px 0 0' }}>
-              자녀 닉네임 + 시작 자금 + PIPA 동의 (만 14세 미만 법정대리인 동의).
+              자녀 닉네임 + 4자리 PIN + PIPA 동의 (만 14세 미만 법정대리인 동의).
             </p>
           </div>
           <div>
-            <strong>2. 자녀는 6자리 코드로 들어와요</strong>
+            <strong>2. 보호자가 통장을 설계</strong>
             <p className="muted" style={{ margin: '4px 0 0' }}>
-              부모가 발급한 코드만 있으면 자녀는 가입할 필요 없어요.
+              시작 원금, 저금 방식 (한 번 / 꾸준히), 주간 이자율, 기간을 정하고 미리보기로 확인.
             </p>
           </div>
           <div>
-            <strong>3. 매주 산수 풀고 이자를 받아요</strong>
+            <strong>3. 자녀가 닉네임 + PIN 으로 로그인</strong>
             <p className="muted" style={{ margin: '4px 0 0' }}>
-              실험영역에 매주 10% 복리. 8주 = 1년치 경험.
+              자녀는 별도 가입 없이 보호자가 만든 계정으로 들어와요.
             </p>
           </div>
           <div>
-            <strong>4. 자유영역은 마음대로</strong>
+            <strong>4. 자녀가 본인 통장으로 시작</strong>
             <p className="muted" style={{ margin: '4px 0 0' }}>
-              자녀가 통제받지 않고 자유롭게 쓸 수 있는 영역.
+              보호자 추천을 기본으로 보고, 본인 선택으로 시작 원금/방식/기간을 확정해요.
+            </p>
+          </div>
+          <div>
+            <strong>5. 매주 일요일에 산수 풀고 이자 받기</strong>
+            <p className="muted" style={{ margin: '4px 0 0' }}>
+              통장 전체에 매주 10% 복리. 8주 ≈ 1년치 시간 압축 경험.
             </p>
           </div>
         </div>
