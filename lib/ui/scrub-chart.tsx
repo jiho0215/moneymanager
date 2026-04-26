@@ -3,7 +3,6 @@
 import { useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 
-const MAX_TICKS = 50;
 const VIEWBOX_W = 720;
 const VIEWBOX_H = 380;
 const MARGIN = { top: 30, right: 30, bottom: 50, left: 64 };
@@ -52,9 +51,15 @@ function getMilestone(t: number): Milestone {
 const PRESET_PRINCIPALS = [10_000, 50_000, 100_000, 1_000_000];
 const PRESET_RATES = [5, 7, 10, 15, 20];
 const PRESET_ADDITIONS = [0, 500, 1_000, 5_000, 10_000];
+const PRESET_RANGES = [8, 20, 50, 100];
+
+function getXTicks(max: number): number[] {
+  return Array.from({ length: 6 }, (_, i) => Math.round((max * i) / 5));
+}
 
 export function ScrubChart() {
   const [tick, setTick] = useState(8);
+  const [maxTicks, setMaxTicks] = useState(50);
   const [mode, setMode] = useState<Mode>('years');
   const [principal, setPrincipal] = useState(10_000);
   const [ratePct, setRatePct] = useState(10);
@@ -62,6 +67,12 @@ export function ScrubChart() {
   const [dragging, setDragging] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const rateBp = ratePct * 100;
+
+  // Clamp tick when range changes
+  function changeMaxTicks(newMax: number) {
+    setMaxTicks(newMax);
+    setTick((t) => Math.min(t, newMax));
+  }
 
   const unit = mode === 'years' ? '년' : '주';
 
@@ -73,8 +84,8 @@ export function ScrubChart() {
     const xInViewbox = (e.clientX - rect.left) * ratio;
     const xInPlot = xInViewbox - MARGIN.left;
     const innerW = VIEWBOX_W - MARGIN.left - MARGIN.right;
-    const t = Math.round((xInPlot / innerW) * MAX_TICKS);
-    setTick(Math.max(0, Math.min(MAX_TICKS, t)));
+    const t = Math.round((xInPlot / innerW) * maxTicks);
+    setTick(Math.max(0, Math.min(maxTicks, t)));
   }
   function onPointerDown(e: ReactPointerEvent<SVGSVGElement>) {
     e.preventDefault();
@@ -93,7 +104,7 @@ export function ScrubChart() {
 
   const series = useMemo(() => {
     const arr: { t: number; piggy: number; passive: number; active: number }[] = [];
-    for (let t = 0; t <= MAX_TICKS; t += 1) {
+    for (let t = 0; t <= maxTicks; t += 1) {
       arr.push({
         t,
         piggy: piggyAt(principal, addition, t),
@@ -102,7 +113,7 @@ export function ScrubChart() {
       });
     }
     return arr;
-  }, [principal, rateBp, addition]);
+  }, [principal, rateBp, addition, maxTicks]);
 
   const yMax = Math.max(series[series.length - 1]!.active, principal * 2);
   const yMin = principal;
@@ -110,7 +121,7 @@ export function ScrubChart() {
   const innerW = VIEWBOX_W - MARGIN.left - MARGIN.right;
   const innerH = VIEWBOX_H - MARGIN.top - MARGIN.bottom;
 
-  const xScale = (t: number) => MARGIN.left + (t / MAX_TICKS) * innerW;
+  const xScale = (t: number) => MARGIN.left + (t / maxTicks) * innerW;
   const yScale = (val: number) =>
     MARGIN.top + innerH - ((val - yMin) / Math.max(1, yMax - yMin)) * innerH;
 
@@ -118,7 +129,7 @@ export function ScrubChart() {
   const passivePath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.passive)}`).join(' ');
   const activePath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.active)}`).join(' ');
 
-  const xTicks = [0, 10, 20, 30, 40, 50];
+  const xTicks = getXTicks(maxTicks);
   const yTicks = [yMin, yMin + (yMax - yMin) * 0.25, yMin + (yMax - yMin) * 0.5, yMin + (yMax - yMin) * 0.75, yMax];
 
   const cur = series[tick]!;
@@ -188,6 +199,12 @@ export function ScrubChart() {
               <Chip key={a} active={addition === a} onClick={() => setAddition(a)}>{a === 0 ? '0' : fmtKRW(a)}</Chip>
             ))}
           </ControlField>
+
+          <ControlField label={`📅 기간 (최대 ${unit})`} value={`${maxTicks}${unit}`} valueColor="var(--bonus-deep)">
+            {PRESET_RANGES.map((r) => (
+              <Chip key={r} active={maxTicks === r} onClick={() => changeMaxTicks(r)}>{r}{unit}</Chip>
+            ))}
+          </ControlField>
         </div>
 
         <p className="soft" style={{ margin: 0, fontSize: '0.82rem' }}>
@@ -220,7 +237,7 @@ export function ScrubChart() {
           role="slider"
           aria-label="시간을 끌어서 변경"
           aria-valuemin={0}
-          aria-valuemax={MAX_TICKS}
+          aria-valuemax={maxTicks}
           aria-valuenow={tick}
           tabIndex={0}
           onPointerDown={onPointerDown}
@@ -233,11 +250,11 @@ export function ScrubChart() {
               setTick((t) => Math.max(0, t - 1));
             } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
               e.preventDefault();
-              setTick((t) => Math.min(MAX_TICKS, t + 1));
+              setTick((t) => Math.min(maxTicks, t + 1));
             } else if (e.key === 'Home') {
               setTick(0);
             } else if (e.key === 'End') {
-              setTick(MAX_TICKS);
+              setTick(maxTicks);
             }
           }}
           style={{
