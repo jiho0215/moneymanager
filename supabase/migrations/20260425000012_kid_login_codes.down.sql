@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS kid_login_codes CASCADE;

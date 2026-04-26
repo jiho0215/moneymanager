@@ -25,11 +25,10 @@ site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000"]
 jwt_expiry = 1800  # 30분 (자녀 inactivity timeout NFR §1.3.2)
 enable_signup = true
-enable_confirmations = false  # 가족 단위 MVP, 이메일 확인 생략
 
 [auth.email]
 enable_signup = true
-enable_confirmations = false
+enable_confirmations = false  # 가족 단위 MVP, 이메일 확인 생략
 
 [storage]
 enabled = false

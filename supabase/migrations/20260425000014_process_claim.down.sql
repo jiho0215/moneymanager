@@ -1,0 +1,2 @@
+DROP FUNCTION IF EXISTS process_claim(UUID, INTEGER, TEXT, TEXT, TEXT, JSONB);
+DROP FUNCTION IF EXISTS transfer_free_to_experiment(UUID, BIGINT);
