@@ -258,8 +258,22 @@ function DepositOption() {
           borderTop: '1px solid var(--border)',
         }}
       >
+        <div
+          style={{
+            padding: 'var(--sp-3)',
+            marginBottom: 'var(--sp-3)',
+            background: 'var(--danger-bg)',
+            border: '1px solid var(--danger)',
+            borderRadius: 'var(--r-sm)',
+            color: '#991b1b',
+            fontSize: '0.92rem',
+            fontWeight: 600,
+          }}
+        >
+          ⚠️ <strong>한 번 넣은 돈은 다시 못 빼요.</strong> 잘 생각하고 넣어주세요.
+        </div>
         <p className="muted" style={{ margin: '0 0 var(--sp-3)', fontSize: '0.9rem' }}>
-          저금한 돈도 매주 청구할 때 함께 이자가 붙어요. 한 번 넣은 돈은 빼지 않고 끝까지 키워보자!
+          넣은 돈도 매주 청구할 때 함께 이자가 붙어요. 끝까지 키우는 게 목적이에요.
         </p>
         <form action={kidDeposit} className="row gap-2">
           <input
