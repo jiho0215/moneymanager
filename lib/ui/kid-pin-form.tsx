@@ -1,19 +1,19 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { loginAsKidWithNames } from '@/app/(auth)/login/actions';
+import { loginAsKidWithPin } from '@/app/(auth)/login/actions';
 import { SubmitButton } from './submit-button';
 
-const STORAGE_KEY = 'cls_kid_names_v1';
+const STORAGE_KEY = 'cls_kid_pins_v1';
 const MAX_REMEMBERED = 6;
 
 export type RememberedKid = {
   nickname: string;
-  guardianName: string;
+  guardianName?: string;
   lastUsedAt: number;
 };
 
-export function loadKidNames(): RememberedKid[] {
+export function loadRememberedKids(): RememberedKid[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -21,21 +21,20 @@ export function loadKidNames(): RememberedKid[] {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed
-      .filter((x) => typeof x?.nickname === 'string' && typeof x?.guardianName === 'string')
+      .filter((x) => typeof x?.nickname === 'string' && x.nickname.length > 0)
       .slice(0, MAX_REMEMBERED);
   } catch {
     return [];
   }
 }
 
-export function saveKidNames(nickname: string, guardianName: string) {
+export function saveKidNickname(nickname: string, guardianName?: string) {
   if (typeof window === 'undefined') return;
   const n = nickname.trim();
-  const g = guardianName.trim();
-  if (!n || !g) return;
-  const existing = loadKidNames();
-  const others = existing.filter((c) => !(c.nickname === n && c.guardianName === g));
-  const next = [{ nickname: n, guardianName: g, lastUsedAt: Date.now() }, ...others].slice(0, MAX_REMEMBERED);
+  if (!n) return;
+  const existing = loadRememberedKids();
+  const others = existing.filter((c) => c.nickname !== n);
+  const next = [{ nickname: n, guardianName, lastUsedAt: Date.now() }, ...others].slice(0, MAX_REMEMBERED);
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
@@ -43,9 +42,9 @@ export function saveKidNames(nickname: string, guardianName: string) {
   }
 }
 
-function removeEntry(nickname: string, guardianName: string) {
+function removeEntry(nickname: string) {
   if (typeof window === 'undefined') return;
-  const next = loadKidNames().filter((c) => !(c.nickname === nickname && c.guardianName === guardianName));
+  const next = loadRememberedKids().filter((c) => c.nickname !== nickname);
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
@@ -53,30 +52,29 @@ function removeEntry(nickname: string, guardianName: string) {
   }
 }
 
-export function KidNamesForm() {
+export function KidPinForm() {
   const [remembered, setRemembered] = useState<RememberedKid[]>([]);
   const [kidNickname, setKidNickname] = useState('');
-  const [guardianName, setGuardianName] = useState('');
-  const formRef = useRef<HTMLFormElement>(null);
+  const [kidPin, setKidPin] = useState('');
+  const pinRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setRemembered(loadKidNames());
+    setRemembered(loadRememberedKids());
   }, []);
 
   function handleChip(c: RememberedKid) {
     setKidNickname(c.nickname);
-    setGuardianName(c.guardianName);
-    setTimeout(() => formRef.current?.requestSubmit(), 50);
+    setTimeout(() => pinRef.current?.focus(), 50);
   }
 
   function handleForget(c: RememberedKid) {
-    removeEntry(c.nickname, c.guardianName);
-    setRemembered(loadKidNames());
+    removeEntry(c.nickname);
+    setRemembered(loadRememberedKids());
   }
 
   function handleSubmit() {
-    if (kidNickname.trim() && guardianName.trim()) {
-      saveKidNames(kidNickname, guardianName);
+    if (kidNickname.trim() && /^\d{4}$/.test(kidPin)) {
+      saveKidNickname(kidNickname);
     }
   }
 
@@ -84,11 +82,11 @@ export function KidNamesForm() {
     <div className="stack-3">
       {remembered.length > 0 && (
         <div>
-          <div className="soft" style={{ marginBottom: 8 }}>📌 저장된 자녀 — 눌러서 바로 들어가기</div>
+          <div className="soft" style={{ marginBottom: 8 }}>📌 저장된 자녀 — 누르면 닉네임 자동 채움</div>
           <div className="stack-2">
             {remembered.map((c) => (
               <div
-                key={`${c.nickname}::${c.guardianName}`}
+                key={c.nickname}
                 className="row"
                 style={{
                   background: 'var(--experiment-bg)',
@@ -117,9 +115,11 @@ export function KidNamesForm() {
                   <span style={{ fontSize: '1.4rem' }}>🌱</span>
                   <span style={{ flex: 1 }}>
                     <span style={{ fontWeight: 700, fontSize: '1rem', display: 'block' }}>{c.nickname}</span>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
-                      {c.guardianName} 가족
-                    </span>
+                    {c.guardianName && (
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
+                        {c.guardianName} 가족
+                      </span>
+                    )}
                   </span>
                 </button>
                 <button
@@ -145,7 +145,7 @@ export function KidNamesForm() {
         </div>
       )}
 
-      <form ref={formRef} action={loginAsKidWithNames} onSubmit={handleSubmit} className="stack-2">
+      <form action={loginAsKidWithPin} onSubmit={handleSubmit} className="stack-2">
         <label className="field" style={{ margin: 0 }}>
           자녀 닉네임
           <input
@@ -159,15 +159,27 @@ export function KidNamesForm() {
           />
         </label>
         <label className="field" style={{ margin: 0 }}>
-          부모님 이름
+          PIN (숫자 4자리)
           <input
+            ref={pinRef}
             type="text"
-            name="guardianName"
-            placeholder="예: 쥐호"
-            value={guardianName}
-            onChange={(e) => setGuardianName(e.target.value)}
+            name="kidPin"
+            placeholder="••••"
+            value={kidPin}
+            onChange={(e) => setKidPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
             required
+            inputMode="numeric"
+            pattern="\d{4}"
+            maxLength={4}
+            minLength={4}
             autoComplete="off"
+            style={{
+              fontFamily: 'monospace',
+              letterSpacing: '0.6em',
+              fontSize: '1.4rem',
+              textAlign: 'center',
+              paddingLeft: '0.6em',
+            }}
           />
         </label>
         <SubmitButton variant="success" pendingText="확인 중...">

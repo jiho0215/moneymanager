@@ -17,61 +17,51 @@ export async function loginGuardian(formData: FormData): Promise<void> {
   redirect('/guardian');
 }
 
-export async function loginAsKidWithNames(formData: FormData): Promise<void> {
+export async function loginAsKidWithPin(formData: FormData): Promise<void> {
   const reqId = generateRequestId();
   const kidNickname = String(formData.get('kidNickname') ?? '').trim();
-  const guardianName = String(formData.get('guardianName') ?? '').trim();
+  const kidPin = String(formData.get('kidPin') ?? '').trim();
 
-  if (!kidNickname || !guardianName) {
-    redirect('/login?error=' + encodeURIComponent('자녀 닉네임과 부모님 이름을 모두 입력해주세요.'));
+  if (!kidNickname || !kidPin) {
+    redirect('/login?error=' + encodeURIComponent('자녀 닉네임과 PIN을 입력해주세요.'));
+  }
+  if (!/^\d{4}$/.test(kidPin)) {
+    redirect('/login?error=' + encodeURIComponent('PIN은 숫자 4자리예요.'));
   }
 
   const admin = getSupabaseAdmin();
-
-  // Find guardian(s) by display_name. Multiple families could share the same parent name.
-  const { data: guardians } = await admin
+  // Globally unique kid nickname (DB index enforced)
+  const { data: memberships } = await admin
     .from('memberships')
-    .select('id, family_id')
-    .eq('role', 'guardian')
-    .eq('display_name', guardianName);
+    .select('user_id')
+    .eq('role', 'kid')
+    .eq('display_name', kidNickname);
 
-  if (!guardians || guardians.length === 0) {
-    logger.warn('kid login: no matching guardian', { request_id: reqId, success: false });
-    redirect('/login?error=' + encodeURIComponent('일치하는 가족이 없어요. 부모님 이름을 다시 확인해주세요.'));
-  }
-
-  // Try each guardian's family for matching kid nickname
-  let matchedKidUserId: string | null = null;
-  for (const g of guardians) {
-    const familyId = (g as { family_id: string }).family_id;
-    const { data: kids } = await admin
-      .from('memberships')
-      .select('user_id')
-      .eq('family_id', familyId)
-      .eq('role', 'kid')
-      .eq('display_name', kidNickname);
-    if (kids && kids.length > 0) {
-      matchedKidUserId = (kids[0] as { user_id: string }).user_id;
-      break;
-    }
-  }
-
-  if (!matchedKidUserId) {
-    logger.warn('kid login: no matching kid', { request_id: reqId, success: false });
+  if (!memberships || memberships.length === 0) {
+    logger.warn('kid login: nickname not found', { request_id: reqId, success: false });
     redirect('/login?error=' + encodeURIComponent('일치하는 자녀가 없어요. 닉네임을 다시 확인해주세요.'));
   }
 
-  const { data: kidUser, error: uErr } = await admin.auth.admin.getUserById(matchedKidUserId!);
+  const userId = (memberships[0] as { user_id: string }).user_id;
+  const { data: kidUser, error: uErr } = await admin.auth.admin.getUserById(userId);
   if (uErr || !kidUser.user) redirect('/login?error=' + encodeURIComponent('자녀 인증 실패'));
 
-  const kidEmail = kidUser.user!.email;
-  const kidInternalPassword = (kidUser.user!.user_metadata as { internal_password?: string })?.internal_password;
-  if (!kidEmail || !kidInternalPassword) redirect('/login?error=' + encodeURIComponent('자격증명 누락'));
+  const meta = kidUser.user!.user_metadata as { internal_password?: string; kid_pin?: string };
+  const storedPin = meta?.kid_pin;
+  const internalPassword = meta?.internal_password;
+  if (!storedPin || !internalPassword) {
+    redirect('/login?error=' + encodeURIComponent('PIN이 설정되지 않은 자녀예요. 보호자에게 다시 가입을 요청해주세요.'));
+  }
+
+  if (storedPin !== kidPin) {
+    logger.warn('kid login: wrong pin', { request_id: reqId, success: false });
+    redirect('/login?error=' + encodeURIComponent('PIN이 틀렸어요. 다시 확인해주세요.'));
+  }
 
   const supabase = await getSupabaseServerClient();
   const { error: signinErr } = await supabase.auth.signInWithPassword({
-    email: kidEmail!,
-    password: kidInternalPassword!,
+    email: kidUser.user!.email!,
+    password: internalPassword!,
   });
   if (signinErr) {
     logger.error('kid login: signin failed', { request_id: reqId, error_code: signinErr.message });
@@ -81,7 +71,7 @@ export async function loginAsKidWithNames(formData: FormData): Promise<void> {
   logger.info('kid login: success', {
     request_id: reqId,
     actor_role: 'kid',
-    action: 'loginAsKidWithNames',
+    action: 'loginAsKidWithPin',
     success: true,
   });
   redirect('/dashboard');

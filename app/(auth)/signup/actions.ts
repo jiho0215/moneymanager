@@ -26,18 +26,32 @@ export async function signupFamily(formData: FormData): Promise<void> {
   const kidNickname = String(formData.get('kidNickname') ?? '').trim();
   const kidGrade = Number(formData.get('kidGrade'));
   const startingCapital = Number(formData.get('startingCapital'));
+  const kidPin = String(formData.get('kidPin') ?? '').trim();
   const consent = formData.get('consent') === 'on';
 
-  if (!guardianEmail || !guardianPassword || !familyName || !kidNickname || !consent) {
+  if (!guardianEmail || !guardianPassword || !familyName || !kidNickname || !kidPin || !consent) {
     redirect('/signup?error=' + encodeURIComponent('필수 항목 누락'));
   }
   if (guardianPassword.length < 8) redirect('/signup?error=' + encodeURIComponent('비밀번호 8자 이상'));
+  if (!/^\d{4}$/.test(kidPin)) {
+    redirect('/signup?error=' + encodeURIComponent('자녀 PIN은 숫자 4자리여야 해요 (예: 1234).'));
+  }
   if (kidGrade < 5 || kidGrade > 6) redirect('/signup?error=' + encodeURIComponent('학년은 5 또는 6'));
   if (!Number.isInteger(startingCapital) || startingCapital < 1000 || startingCapital > 1_000_000) {
     redirect('/signup?error=' + encodeURIComponent('시작 자금 1,000-1,000,000 사이'));
   }
 
   const admin = getSupabaseAdmin();
+
+  // Pre-check kid nickname uniqueness (also enforced by DB index)
+  const { data: existing } = await admin
+    .from('memberships')
+    .select('id')
+    .eq('role', 'kid')
+    .eq('display_name', kidNickname);
+  if (existing && existing.length > 0) {
+    redirect('/signup?error=' + encodeURIComponent(`'${kidNickname}' 닉네임은 이미 사용 중이에요. 다른 닉네임을 골라주세요.`));
+  }
 
   const { data: gAuth, error: gErr } = await admin.auth.admin.createUser({
     email: guardianEmail,
@@ -71,6 +85,7 @@ export async function signupFamily(formData: FormData): Promise<void> {
       role: 'kid',
       display_name: kidNickname,
       internal_password: kidPassword,
+      kid_pin: kidPin,
     },
   });
   if (kErr || !kAuth.user) {

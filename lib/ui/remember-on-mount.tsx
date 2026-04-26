@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { saveKidNames } from './kid-names-form';
+import { saveKidNickname } from './kid-pin-form';
 
 /**
  * Silent client effect: when this component mounts (kid is on dashboard),
- * save the (kidNickname, guardianName) pair to localStorage so future
- * logins on this device show a one-click chip.
+ * save the (nickname, guardianName) to localStorage so future logins on
+ * this device show a chip with friendly label.
  */
 export function RememberKidOnMount({
   nickname,
@@ -16,8 +16,8 @@ export function RememberKidOnMount({
   guardianName: string;
 }) {
   useEffect(() => {
-    if (nickname && guardianName) {
-      saveKidNames(nickname, guardianName);
+    if (nickname) {
+      saveKidNickname(nickname, guardianName);
     }
   }, [nickname, guardianName]);
   return null;

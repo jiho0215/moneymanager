@@ -71,8 +71,22 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
             <input type="text" name="familyName" required />
           </label>
           <label className="field">
-            자녀 닉네임 *
+            자녀 닉네임 * <span className="soft" style={{ fontWeight: 400 }}>(전체에서 유일해야 해요)</span>
             <input type="text" name="kidNickname" required maxLength={20} />
+          </label>
+          <label className="field">
+            자녀 PIN * <span className="soft" style={{ fontWeight: 400 }}>(숫자 4자리)</span>
+            <input
+              type="text"
+              name="kidPin"
+              required
+              inputMode="numeric"
+              pattern="\d{4}"
+              maxLength={4}
+              minLength={4}
+              placeholder="1234"
+              style={{ fontFamily: 'monospace', letterSpacing: '0.4em', fontSize: '1.1rem', textAlign: 'center' }}
+            />
           </label>
           <label className="field">
             자녀 학년 (5 또는 6) *
