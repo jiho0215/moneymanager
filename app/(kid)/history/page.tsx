@@ -34,23 +34,43 @@ type TxView = {
   label: string;
   amount: number;
   weekNum: number | null;
+  createdAt: string;
 };
 
 function classifyTx(t: TxRow): TxView | null {
   const amount = Number(t.amount);
+  const base = { id: t.id, date: fmtDate(t.created_at), createdAt: t.created_at, weekNum: t.week_num };
   switch (t.transaction_type) {
     case 'initial_deposit':
-      return { id: t.id, date: fmtDate(t.created_at), icon: '🌱', label: '저금 시작', amount, weekNum: t.week_num };
+      return { ...base, icon: '🌱', label: '저금 시작', amount };
     case 'manual_adjustment':
-      return { id: t.id, date: fmtDate(t.created_at), icon: '📥', label: '저금 입금', amount, weekNum: t.week_num };
+      return { ...base, icon: '📥', label: '저금 입금', amount };
     case 'interest_accrued':
       if (amount === 0) return null;
-      return { id: t.id, date: fmtDate(t.created_at), icon: '📈', label: `${t.week_num}주차 이자`, amount, weekNum: t.week_num };
+      return { ...base, icon: '📈', label: `${t.week_num}주차 이자`, amount };
     case 'bonus_match':
-      return { id: t.id, date: fmtDate(t.created_at), icon: '💧', label: '보너스 (이전 모델)', amount, weekNum: t.week_num };
+      return { ...base, icon: '💧', label: '보너스 (이전 모델)', amount };
     default:
       return null;
   }
+}
+
+// Legacy create_family_with_kid wrote two initial_deposit rows (free 80%, exp 20%)
+// at the same timestamp. Merge any (label, createdAt) duplicates in display.
+function mergeSimultaneous(views: TxView[]): TxView[] {
+  const buckets = new Map<string, TxView>();
+  const order: string[] = [];
+  for (const v of views) {
+    const key = `${v.label}|${v.createdAt}`;
+    const existing = buckets.get(key);
+    if (existing) {
+      existing.amount += v.amount;
+    } else {
+      buckets.set(key, { ...v });
+      order.push(key);
+    }
+  }
+  return order.map((k) => buckets.get(k)!);
 }
 
 export default async function KidHistoryPage() {
@@ -80,9 +100,11 @@ export default async function KidHistoryPage() {
     weeklyGrowthRateBp: Number(ctx.account.weekly_growth_rate_bp ?? 1000),
   });
 
-  const txViews = ((txs ?? []) as TxRow[])
-    .map(classifyTx)
-    .filter((v): v is TxView => v !== null);
+  const txViews = mergeSimultaneous(
+    ((txs ?? []) as TxRow[])
+      .map(classifyTx)
+      .filter((v): v is TxView => v !== null)
+  );
 
   return (
     <main className="page">
