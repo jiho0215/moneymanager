@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/', '/learn', '/signup', '/login', '/api/health', '/api/keepalive', '/api/cron/monthly-reconcile'];
+const PUBLIC_PATHS = ['/', '/learn', '/signup', '/login', '/join', '/onboarding', '/api/health', '/api/keepalive', '/api/cron/monthly-reconcile'];
 const KID_PATHS = ['/dashboard', '/claim', '/history'];
 const GUARDIAN_PATHS = ['/guardian', '/settings', '/audit', '/kid-access'];
 
