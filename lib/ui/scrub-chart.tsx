@@ -135,7 +135,14 @@ export function ScrubChart() {
     return arr;
   }, [principal, rateBp, addition, maxTicks, scenario]);
 
-  const yMax = Math.max(series[series.length - 1]!.compound, principal * 2);
+  // Y-axis fixed across both scenarios for direct toggle comparison.
+  // Regular scenario's compound active is always >= one-time's compound passive,
+  // so we use the larger to bound the axis identically in both views.
+  const yMax = Math.max(
+    compoundPassiveAt(principal, rateBp, maxTicks),
+    compoundActiveAt(principal, addition, rateBp, maxTicks),
+    principal * 2
+  );
   const yMin = principal;
 
   const innerW = VIEWBOX_W - MARGIN.left - MARGIN.right;
