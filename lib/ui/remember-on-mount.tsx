@@ -1,24 +1,27 @@
 'use client';
 
 import { useEffect } from 'react';
-import { saveKidNickname } from './kid-pin-form';
+import { saveRememberedKid } from './kid-login-form';
 
 /**
- * Silent client effect: when this component mounts (kid is on dashboard),
- * save the (nickname, guardianName) to localStorage so future logins on
- * this device show a chip with friendly label.
+ * On the kid dashboard, write a friendly chip entry (loginId, displayName,
+ * familyName) to localStorage so the next login on this device shows it.
+ * The kid form's "remember me" checkbox controls whether anything was saved
+ * on the previous login; this hook always refreshes it on dashboard visits.
  */
 export function RememberKidOnMount({
-  nickname,
-  guardianName,
+  loginId,
+  displayName,
+  familyName,
 }: {
-  nickname: string;
-  guardianName: string;
+  loginId: string;
+  displayName: string;
+  familyName: string;
 }) {
   useEffect(() => {
-    if (nickname) {
-      saveKidNickname(nickname, guardianName);
+    if (loginId) {
+      saveRememberedKid({ loginId, displayName, familyName, lastUsedAt: Date.now() });
     }
-  }, [nickname, guardianName]);
+  }, [loginId, displayName, familyName]);
   return null;
 }

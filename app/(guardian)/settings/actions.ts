@@ -38,58 +38,105 @@ export async function updateFamilyTimezone(formData: FormData): Promise<void> {
   redirect('/settings?tz_changed=1');
 }
 
-export async function changeKidPin(formData: FormData): Promise<void> {
+export async function addKid(formData: FormData): Promise<void> {
   const reqId = generateRequestId();
-  const kidMembershipId = String(formData.get('kidMembershipId') ?? '');
-  const newPin = String(formData.get('newPin') ?? '').trim();
-
-  if (!kidMembershipId) redirect('/settings?error=' + encodeURIComponent('자녀를 찾을 수 없어요'));
-  if (!/^\d{4}$/.test(newPin)) {
-    redirect('/settings?error=' + encodeURIComponent('PIN은 숫자 4자리여야 해요 (예: 1234)'));
+  const displayName = String(formData.get('displayName') ?? '').trim();
+  const grade = Number(formData.get('grade'));
+  if (!displayName || !Number.isInteger(grade) || grade < 1 || grade > 12) {
+    redirect('/settings?error=' + encodeURIComponent('자녀 닉네임과 학년을 확인해주세요'));
   }
-
-  const admin = getSupabaseAdmin();
-  const { data: membership } = await admin
-    .from('memberships')
-    .select('user_id, role, family_id')
-    .eq('id', kidMembershipId)
-    .single();
-  if (!membership) {
-    redirect('/settings?error=' + encodeURIComponent('자녀 멤버십 조회 실패'));
-  }
-
-  const m = membership as { user_id: string; role: string; family_id: string };
-  if (m.role !== 'kid') redirect('/settings?error=' + encodeURIComponent('자녀가 아닙니다'));
 
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
+  const admin = getSupabaseAdmin();
   const { data: callerRows } = await admin
     .from('memberships')
-    .select('id')
+    .select('family_id')
     .eq('user_id', user.id)
-    .eq('family_id', m.family_id)
-    .eq('role', 'guardian');
-  if (!callerRows || callerRows.length === 0) {
-    redirect('/settings?error=' + encodeURIComponent('권한 없음'));
-  }
+    .eq('role', 'guardian')
+    .single();
+  if (!callerRows) redirect('/settings?error=' + encodeURIComponent('가족을 찾을 수 없어요'));
+  const familyId = (callerRows as { family_id: string }).family_id;
 
-  const { data: kidUser } = await admin.auth.admin.getUserById(m.user_id);
-  if (!kidUser?.user) redirect('/settings?error=' + encodeURIComponent('자녀 인증 조회 실패'));
-
-  const currentMeta = (kidUser.user.user_metadata ?? {}) as Record<string, unknown>;
-  const { error: uErr } = await admin.auth.admin.updateUserById(m.user_id, {
-    user_metadata: { ...currentMeta, kid_pin: newPin },
+  const { data, error } = await admin.rpc('add_kid_to_family', {
+    p_family_id: familyId,
+    p_actor_user_id: user.id,
+    p_kid_nickname: displayName,
+    p_kid_grade: grade,
   });
-  if (uErr) {
-    logger.error('changeKidPin: update failed', { request_id: reqId, error_code: uErr.message });
-    redirect('/settings?error=' + encodeURIComponent('PIN 업데이트 실패'));
+  if (error) {
+    logger.error('addKid: failed', { request_id: reqId, error_code: error.message });
+    redirect('/settings?error=' + encodeURIComponent(error.message));
+  }
+  const result = data as { ok: boolean; reason?: string; kid_membership_id?: string };
+  if (!result.ok) {
+    redirect('/settings?error=' + encodeURIComponent(result.reason ?? '실패'));
   }
 
-  logger.info('changeKidPin: success', { request_id: reqId, action: 'changeKidPin', success: true });
+  logger.info('addKid: success', { request_id: reqId, action: 'addKid', success: true });
   revalidatePath('/settings');
-  redirect('/settings?pin_changed=1');
+  redirect('/onboarding');
+}
+
+export async function resetKidLogin(formData: FormData): Promise<void> {
+  const reqId = generateRequestId();
+  const kidMembershipId = String(formData.get('kidMembershipId') ?? '');
+  const newLoginId = String(formData.get('newLoginId') ?? '').trim();
+  const newPassword = String(formData.get('newPassword') ?? '');
+
+  if (!kidMembershipId) redirect('/settings?error=' + encodeURIComponent('자녀를 찾을 수 없어요'));
+  if (newLoginId.length < 1 || newLoginId.length > 20) {
+    redirect('/settings?error=' + encodeURIComponent('아이디는 1-20자로 입력해주세요'));
+  }
+  if (newPassword.length < 4 || newPassword.length > 8) {
+    redirect('/settings?error=' + encodeURIComponent('비밀번호는 4-8자로 입력해주세요'));
+  }
+
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const admin = getSupabaseAdmin();
+  const { data: m } = await admin
+    .from('memberships')
+    .select('user_id, family_id, role')
+    .eq('id', kidMembershipId)
+    .single();
+  if (!m || (m as { role: string }).role !== 'kid') {
+    redirect('/settings?error=' + encodeURIComponent('자녀를 찾을 수 없어요'));
+  }
+  const kid = m as { user_id: string | null; family_id: string };
+  if (!kid.user_id) {
+    redirect('/settings?error=' + encodeURIComponent('자녀가 아직 로그인 정보를 만들지 않았어요. 초대 링크를 다시 보내주세요.'));
+  }
+
+  // Update login_id via RPC (also enforces guardian auth + uniqueness)
+  const { data: idResult, error: idErr } = await admin.rpc('reset_kid_login_id', {
+    p_kid_membership_id: kidMembershipId,
+    p_actor_user_id: user.id,
+    p_new_login_id: newLoginId,
+  });
+  if (idErr) {
+    logger.error('resetKidLogin: id rpc error', { request_id: reqId, error_code: idErr.message });
+    redirect('/settings?error=' + encodeURIComponent(idErr.message));
+  }
+  const r = idResult as { ok: boolean; reason?: string };
+  if (!r.ok) {
+    redirect('/settings?error=' + encodeURIComponent(r.reason === 'login_id_taken' ? '이미 사용 중인 아이디예요' : (r.reason ?? '실패')));
+  }
+
+  // Update auth user password
+  const { error: pwErr } = await admin.auth.admin.updateUserById(kid.user_id, { password: newPassword });
+  if (pwErr) {
+    logger.error('resetKidLogin: password update failed', { request_id: reqId, error_code: pwErr.message });
+    redirect('/settings?error=' + encodeURIComponent('비밀번호 업데이트 실패'));
+  }
+
+  logger.info('resetKidLogin: success', { request_id: reqId, action: 'resetKidLogin', success: true });
+  revalidatePath('/settings');
+  redirect('/settings?login_reset=1');
 }
 
 export async function updateSettings(formData: FormData): Promise<void> {

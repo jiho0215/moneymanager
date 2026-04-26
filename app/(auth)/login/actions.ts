@@ -17,64 +17,56 @@ export async function loginGuardian(formData: FormData): Promise<void> {
   redirect('/guardian');
 }
 
-export async function loginAsKidWithPin(formData: FormData): Promise<void> {
+export async function loginAsKid(formData: FormData): Promise<void> {
   const reqId = generateRequestId();
-  const kidNickname = String(formData.get('kidNickname') ?? '').trim();
-  const kidPin = String(formData.get('kidPin') ?? '').trim();
+  const loginId = String(formData.get('loginId') ?? '').trim();
+  const password = String(formData.get('password') ?? '');
+  const remember = formData.get('remember') !== 'off';
 
-  if (!kidNickname || !kidPin) {
-    redirect('/login?error=' + encodeURIComponent('자녀 닉네임과 PIN을 입력해주세요.'));
-  }
-  if (!/^\d{4}$/.test(kidPin)) {
-    redirect('/login?error=' + encodeURIComponent('PIN은 숫자 4자리예요.'));
+  if (!loginId || !password) {
+    redirect('/login?error=' + encodeURIComponent('아이디와 비밀번호를 입력해주세요.'));
   }
 
   const admin = getSupabaseAdmin();
-  // Globally unique kid nickname (DB index enforced)
   const { data: memberships } = await admin
     .from('memberships')
-    .select('user_id')
+    .select('user_id, display_name')
     .eq('role', 'kid')
-    .eq('display_name', kidNickname);
+    .eq('login_id', loginId);
 
   if (!memberships || memberships.length === 0) {
-    logger.warn('kid login: nickname not found', { request_id: reqId, success: false });
-    redirect('/login?error=' + encodeURIComponent('일치하는 자녀가 없어요. 닉네임을 다시 확인해주세요.'));
+    logger.warn('kid login: login_id not found', { request_id: reqId, success: false });
+    redirect('/login?error=' + encodeURIComponent('아이디 또는 비밀번호가 맞지 않아요.'));
   }
 
-  const userId = (memberships[0] as { user_id: string }).user_id;
+  const userId = (memberships[0] as { user_id: string | null }).user_id;
+  if (!userId) {
+    redirect('/login?error=' + encodeURIComponent('아직 로그인 정보를 만들지 않은 아이디예요. 보호자에게 받은 링크에서 먼저 만들어주세요.'));
+  }
+
   const { data: kidUser, error: uErr } = await admin.auth.admin.getUserById(userId);
-  if (uErr || !kidUser.user) redirect('/login?error=' + encodeURIComponent('자녀 인증 실패'));
-
-  const meta = kidUser.user!.user_metadata as { internal_password?: string; kid_pin?: string };
-  const storedPin = meta?.kid_pin;
-  const internalPassword = meta?.internal_password;
-  if (!storedPin || !internalPassword) {
-    redirect('/login?error=' + encodeURIComponent('PIN이 설정되지 않은 자녀예요. 보호자에게 다시 가입을 요청해주세요.'));
-  }
-
-  if (storedPin !== kidPin) {
-    logger.warn('kid login: wrong pin', { request_id: reqId, success: false });
-    redirect('/login?error=' + encodeURIComponent('PIN이 틀렸어요. 다시 확인해주세요.'));
+  if (uErr || !kidUser.user) {
+    redirect('/login?error=' + encodeURIComponent('자녀 인증 실패'));
   }
 
   const supabase = await getSupabaseServerClient();
   const { error: signinErr } = await supabase.auth.signInWithPassword({
     email: kidUser.user!.email!,
-    password: internalPassword!,
+    password,
   });
   if (signinErr) {
-    logger.error('kid login: signin failed', { request_id: reqId, error_code: signinErr.message });
-    redirect('/login?error=' + encodeURIComponent('로그인 실패'));
+    logger.warn('kid login: wrong password', { request_id: reqId, success: false });
+    redirect('/login?error=' + encodeURIComponent('아이디 또는 비밀번호가 맞지 않아요.'));
   }
 
   logger.info('kid login: success', {
     request_id: reqId,
     actor_role: 'kid',
-    action: 'loginAsKidWithPin',
+    action: 'loginAsKid',
     success: true,
   });
-  redirect('/dashboard');
+  // Pass through the remember flag so the client form can update localStorage.
+  redirect('/dashboard?remembered=' + (remember ? '1' : '0'));
 }
 
 export async function logout(): Promise<void> {

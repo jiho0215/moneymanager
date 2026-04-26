@@ -79,22 +79,8 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
             </span>
           </label>
           <label className="field">
-            자녀 닉네임 * <span className="soft" style={{ fontWeight: 400 }}>(전체에서 유일해야 해요)</span>
-            <input type="text" name="kidNickname" required maxLength={20} />
-          </label>
-          <label className="field">
-            자녀 PIN * <span className="soft" style={{ fontWeight: 400 }}>(숫자 4자리)</span>
-            <input
-              type="text"
-              name="kidPin"
-              required
-              inputMode="numeric"
-              pattern="\d{4}"
-              maxLength={4}
-              minLength={4}
-              placeholder="1234"
-              style={{ fontFamily: 'monospace', letterSpacing: '0.4em', fontSize: '1.1rem', textAlign: 'center' }}
-            />
+            자녀 닉네임 (표시용) *
+            <input type="text" name="kidNickname" required maxLength={20} placeholder="예: 지호" />
           </label>
           <label className="field">
             자녀 학년 (5 또는 6) *
@@ -104,7 +90,8 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
             </select>
           </label>
           <p className="soft" style={{ margin: 0, fontSize: '0.85rem' }}>
-            ✨ 시작 원금, 저금 방식, 기간은 가입 후 보호자가 직접 정해요.
+            ✨ 자녀의 로그인 아이디/비밀번호는 자녀가 직접 만들어요.
+            <br />가입 완료 후 자녀에게 전달할 링크를 알려드립니다.
           </p>
         </fieldset>
 

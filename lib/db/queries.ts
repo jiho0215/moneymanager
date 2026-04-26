@@ -7,7 +7,7 @@ export async function getMyKidAccount() {
 
   const { data: membership } = await supabase
     .from('memberships')
-    .select('id, family_id, role, display_name, age_tier, grade, access_code')
+    .select('id, family_id, role, display_name, age_tier, grade, login_id')
     .eq('user_id', user.id)
     .single();
   if (!membership) return null;
@@ -19,7 +19,7 @@ export async function getMyKidAccount() {
     display_name: string;
     age_tier: string | null;
     grade: number | null;
-    access_code: string | null;
+    login_id: string | null;
   };
 
   if (m.role !== 'kid') return null;
@@ -40,10 +40,20 @@ export async function getMyKidAccount() {
   const guardianName =
     (guardians?.[0] as { display_name: string } | undefined)?.display_name ?? '';
 
+  const { data: family } = await supabase
+    .from('families')
+    .select('name, timezone')
+    .eq('id', m.family_id)
+    .single();
+  const familyName = (family as { name: string } | null)?.name ?? '';
+  const familyTimezone = (family as { timezone: string } | null)?.timezone ?? 'Asia/Seoul';
+
   return {
     membership: m,
     account: account as Record<string, number | string | null>,
     guardianName,
+    familyName,
+    familyTimezone,
   };
 }
 

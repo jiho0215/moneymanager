@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 import { getGuardianFamilyView } from '@/lib/db/queries';
 import { getSupabaseAdmin } from '@/lib/auth/admin';
-import { updateSettings, depositToKid, chooseCycleEnd, timeWarp, changeKidPin, updateFamilyTimezone } from './actions';
+import { updateSettings, depositToKid, chooseCycleEnd, timeWarp, addKid, resetKidLogin, updateFamilyTimezone } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
 import { TimezonePicker } from '@/lib/ui/timezone-picker';
+import { CopyButton } from '@/lib/ui/copy-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ const WARP_LABEL: Record<string, string> = {
   reset_today: '🔄 오늘로 리셋',
 };
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ warped?: string; error?: string; pin_changed?: string; tz_changed?: string }> }) {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ warped?: string; error?: string; pin_changed?: string; tz_changed?: string; login_reset?: string }> }) {
   const ctx = await getGuardianFamilyView();
   if (!ctx) redirect('/login');
   const sp = await searchParams;
@@ -25,6 +26,19 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     .eq('id', (ctx.guardian as { family_id: string }).family_id)
     .single();
   const fam = family as { id: string; name: string; timezone: string } | null;
+
+  // Fetch invite_token + login_id per kid (not in getGuardianFamilyView)
+  const kidIds = (ctx.kids as Array<{ id: string }>).map((k) => k.id);
+  const { data: kidMemberships } = kidIds.length
+    ? await admin
+        .from('memberships')
+        .select('id, invite_token, login_id')
+        .in('id', kidIds)
+    : { data: [] };
+  const kidLoginInfo = new Map<string, { invite_token: string | null; login_id: string | null }>();
+  for (const km of (kidMemberships ?? []) as Array<{ id: string; invite_token: string | null; login_id: string | null }>) {
+    kidLoginInfo.set(km.id, { invite_token: km.invite_token, login_id: km.login_id });
+  }
 
   return (
     <main className="page">
@@ -45,7 +59,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       {sp.pin_changed && (
         <div className="alert alert-success fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
           <span style={{ fontSize: '1.2rem' }}>🔒</span>
-          <div>자녀 PIN이 변경되었어요. 다음 로그인부터 새 PIN으로 들어가야 해요.</div>
+          <div>자녀 PIN이 변경되었어요.</div>
+        </div>
+      )}
+      {sp.login_reset && (
+        <div className="alert alert-success fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
+          <span style={{ fontSize: '1.2rem' }}>🔑</span>
+          <div>자녀 로그인 정보가 변경되었어요. 자녀에게 새 아이디/비번을 알려주세요.</div>
         </div>
       )}
       {sp.tz_changed && (
@@ -73,6 +93,30 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </section>
       )}
 
+      <section className="card stack-3" style={{ marginBottom: 'var(--sp-5)' }}>
+        <div>
+          <h2 className="h3" style={{ margin: '0 0 4px' }}>➕ 자녀 추가</h2>
+          <p className="muted" style={{ margin: 0, fontSize: '0.88rem' }}>
+            새 자녀를 가족에 추가해요. 추가 후 통장 설계 (원금/방식/기간) wizard 가 시작됩니다.
+          </p>
+        </div>
+        <form action={addKid} className="row gap-2" style={{ flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            name="displayName"
+            placeholder="자녀 닉네임"
+            required
+            maxLength={20}
+            style={{ flex: 1, minWidth: 140 }}
+          />
+          <select name="grade" required>
+            <option value="5">5학년</option>
+            <option value="6">6학년</option>
+          </select>
+          <SubmitButton variant="primary" pendingText="추가 중...">자녀 추가</SubmitButton>
+        </form>
+      </section>
+
       <div className="stack-5">
         {ctx.kids.map((k) => {
           const kid = k as { id: string; display_name: string };
@@ -97,34 +141,66 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 </form>
               </fieldset>
 
-              <fieldset className="stack-3">
-                <legend>🔒 자녀 PIN 변경</legend>
-                <p className="soft" style={{ margin: 0 }}>
-                  자녀가 로그인할 때 쓰는 4자리 PIN을 바꿉니다. 변경 후 자녀에게 새 PIN을 알려주세요.
-                </p>
-                <form action={changeKidPin} className="row gap-2">
-                  <input type="hidden" name="kidMembershipId" value={kid.id} />
-                  <input
-                    type="text"
-                    name="newPin"
-                    placeholder="새 PIN (숫자 4자리)"
-                    inputMode="numeric"
-                    pattern="\d{4}"
-                    maxLength={4}
-                    minLength={4}
-                    required
-                    autoComplete="off"
-                    style={{
-                      flex: 1,
-                      fontFamily: 'monospace',
-                      letterSpacing: '0.4em',
-                      fontSize: '1.1rem',
-                      textAlign: 'center',
-                    }}
-                  />
-                  <SubmitButton variant="primary" pendingText="변경 중...">PIN 변경</SubmitButton>
-                </form>
-              </fieldset>
+              {(() => {
+                const info = kidLoginInfo.get(kid.id);
+                if (info?.invite_token) {
+                  const inviteUrl = `https://moneybean.vercel.app/join/${info.invite_token}`;
+                  return (
+                    <fieldset className="stack-3" style={{ background: 'var(--bonus-bg)', borderColor: 'var(--bonus)' }}>
+                      <legend>🔗 자녀 가입 링크</legend>
+                      <p className="soft" style={{ margin: 0 }}>
+                        자녀가 이 링크로 들어가서 본인 아이디/비밀번호를 만들어요.
+                      </p>
+                      <div style={{
+                        background: 'white',
+                        padding: 'var(--sp-3)',
+                        borderRadius: 'var(--r-sm)',
+                        wordBreak: 'break-all',
+                        fontFamily: 'monospace',
+                        fontSize: '0.85rem',
+                      }}>
+                        {inviteUrl}
+                      </div>
+                      <CopyButton value={inviteUrl} label="링크 복사" />
+                    </fieldset>
+                  );
+                }
+                if (info?.login_id) {
+                  return (
+                    <fieldset className="stack-3">
+                      <legend>🔑 자녀 로그인 정보</legend>
+                      <p className="soft" style={{ margin: 0 }}>
+                        현재 아이디: <strong>{info.login_id}</strong>
+                        <br />
+                        잊었거나 바꾸고 싶으면 아래에 새로 입력하세요.
+                      </p>
+                      <form action={resetKidLogin} className="stack-2">
+                        <input type="hidden" name="kidMembershipId" value={kid.id} />
+                        <input
+                          type="text"
+                          name="newLoginId"
+                          placeholder="새 아이디 (1-20자)"
+                          minLength={1}
+                          maxLength={20}
+                          required
+                          autoComplete="off"
+                        />
+                        <input
+                          type="password"
+                          name="newPassword"
+                          placeholder="새 비밀번호 (4-8자)"
+                          minLength={4}
+                          maxLength={8}
+                          required
+                          autoComplete="new-password"
+                        />
+                        <SubmitButton variant="primary" pendingText="변경 중...">로그인 정보 리셋</SubmitButton>
+                      </form>
+                    </fieldset>
+                  );
+                }
+                return null;
+              })()}
 
               <fieldset className="stack-3">
                 <legend>💰 통장 입금</legend>

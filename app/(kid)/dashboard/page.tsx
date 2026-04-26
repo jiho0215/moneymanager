@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
 import { getSupabaseServerClient } from '@/lib/db/client';
-import { getSupabaseAdmin } from '@/lib/auth/admin';
 import { GoalBanner, GuideCard } from '@/lib/ui/goal-banner';
 import { RememberKidOnMount } from '@/lib/ui/remember-on-mount';
 import { ScrubChart, type ActualHistoryPoint } from '@/lib/ui/scrub-chart';
@@ -37,18 +36,7 @@ export default async function KidDashboardPage({
   const lastClaimed = account.last_claimed_week_num !== null ? Number(account.last_claimed_week_num) : null;
   const canClaimNow = week > Number(account.week_num_started) && (lastClaimed === null || lastClaimed < week);
 
-  // Look up the family's timezone for date formatting.
-  const admin = getSupabaseAdmin();
-  const { data: famRow } = await admin
-    .from('memberships')
-    .select('family_id')
-    .eq('id', ctx.membership.id)
-    .single();
-  const familyId = (famRow as { family_id: string } | null)?.family_id ?? null;
-  const { data: fam } = familyId
-    ? await admin.from('families').select('timezone').eq('id', familyId).single()
-    : { data: null };
-  const familyTz = (fam as { timezone: string } | null)?.timezone ?? 'Asia/Seoul';
+  const familyTz = ctx.familyTimezone;
 
   // First claimable date = epoch + 7 days, formatted in family TZ.
   function firstClaimDateLabel(epochIso: string | null, tz: string): string {
@@ -92,8 +80,9 @@ export default async function KidDashboardPage({
   return (
     <main className="page">
       <RememberKidOnMount
-        nickname={ctx.membership.display_name}
-        guardianName={ctx.guardianName}
+        loginId={ctx.membership.login_id ?? ''}
+        displayName={ctx.membership.display_name}
+        familyName={ctx.familyName}
       />
       <header style={{ marginBottom: 'var(--sp-4)' }}>
         <div className="soft" style={{ marginBottom: 4 }}>안녕하세요</div>

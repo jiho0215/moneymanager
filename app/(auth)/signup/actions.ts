@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { getSupabaseAdmin, generateKidInternalEmail, generateKidInternalPassword } from '@/lib/auth/admin';
+import { getSupabaseAdmin } from '@/lib/auth/admin';
 import { getSupabaseServerClient } from '@/lib/db/client';
 import { logger, generateRequestId } from '@/lib/observability/logger';
 
@@ -25,30 +25,16 @@ export async function signupFamily(formData: FormData): Promise<void> {
   const guardianDisplayName = String(formData.get('guardianDisplayName') ?? '').trim();
   const kidNickname = String(formData.get('kidNickname') ?? '').trim();
   const kidGrade = Number(formData.get('kidGrade'));
-  const kidPin = String(formData.get('kidPin') ?? '').trim();
   const timezone = String(formData.get('timezone') ?? 'Asia/Seoul').trim();
   const consent = formData.get('consent') === 'on';
 
-  if (!guardianEmail || !guardianPassword || !familyName || !kidNickname || !kidPin || !consent) {
+  if (!guardianEmail || !guardianPassword || !familyName || !kidNickname || !consent) {
     redirect('/signup?error=' + encodeURIComponent('필수 항목 누락'));
   }
   if (guardianPassword.length < 8) redirect('/signup?error=' + encodeURIComponent('비밀번호 8자 이상'));
-  if (!/^\d{4}$/.test(kidPin)) {
-    redirect('/signup?error=' + encodeURIComponent('자녀 PIN은 숫자 4자리여야 해요 (예: 1234).'));
-  }
   if (kidGrade < 5 || kidGrade > 6) redirect('/signup?error=' + encodeURIComponent('학년은 5 또는 6'));
 
   const admin = getSupabaseAdmin();
-
-  // Pre-check kid nickname uniqueness (also enforced by DB index)
-  const { data: existing } = await admin
-    .from('memberships')
-    .select('id')
-    .eq('role', 'kid')
-    .eq('display_name', kidNickname);
-  if (existing && existing.length > 0) {
-    redirect('/signup?error=' + encodeURIComponent(`'${kidNickname}' 닉네임은 이미 사용 중이에요. 다른 닉네임을 골라주세요.`));
-  }
 
   const { data: gAuth, error: gErr } = await admin.auth.admin.createUser({
     email: guardianEmail,
@@ -72,31 +58,12 @@ export async function signupFamily(formData: FormData): Promise<void> {
   }
   const guardianUserId = gAuth.user.id;
 
-  const kidEmail = generateKidInternalEmail();
-  const kidPassword = generateKidInternalPassword();
-  const { data: kAuth, error: kErr } = await admin.auth.admin.createUser({
-    email: kidEmail,
-    password: kidPassword,
-    email_confirm: true,
-    user_metadata: {
-      role: 'kid',
-      display_name: kidNickname,
-      internal_password: kidPassword,
-      kid_pin: kidPin,
-    },
-  });
-  if (kErr || !kAuth.user) {
-    await admin.auth.admin.deleteUser(guardianUserId).catch(() => {});
-    logger.error('signup: kid create failed', { request_id: reqId, error_code: kErr?.message });
-    redirect('/signup?error=' + encodeURIComponent(kErr?.message ?? 'kid 생성 실패'));
-  }
-  const kidUserId = kAuth.user.id;
-
-  const { error: rpcErr } = await admin.rpc('create_family_with_kid', {
+  // Kid user is NOT created here — kid claims their own auth via /join/{token}.
+  const { data: rpcData, error: rpcErr } = await admin.rpc('create_family_with_kid', {
     p_family_name: familyName,
     p_guardian_user_id: guardianUserId,
     p_guardian_display_name: guardianDisplayName || familyName,
-    p_kid_user_id: kidUserId,
+    p_kid_user_id: '00000000-0000-0000-0000-000000000000', // ignored; kid has no user yet
     p_kid_nickname: kidNickname,
     p_kid_grade: kidGrade,
     p_starting_capital: 0,
@@ -107,9 +74,14 @@ export async function signupFamily(formData: FormData): Promise<void> {
   });
   if (rpcErr) {
     await admin.auth.admin.deleteUser(guardianUserId).catch(() => {});
-    await admin.auth.admin.deleteUser(kidUserId).catch(() => {});
     logger.error('signup: rpc failed', { request_id: reqId, error_code: rpcErr.message });
     redirect('/signup?error=' + encodeURIComponent(rpcErr.message));
+  }
+
+  const result = rpcData as { ok: boolean; invite_token?: string };
+  if (!result.ok) {
+    await admin.auth.admin.deleteUser(guardianUserId).catch(() => {});
+    redirect('/signup?error=' + encodeURIComponent('가족 생성 실패'));
   }
 
   logger.info('signup: family created', {

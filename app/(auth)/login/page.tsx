@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { loginGuardian } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
-import { KidPinForm } from '@/lib/ui/kid-pin-form';
+import { KidLoginForm } from '@/lib/ui/kid-login-form';
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const sp = await searchParams;
@@ -32,9 +32,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <section className="card stack-3">
         <h2 className="h3">🌱 자녀</h2>
         <p className="soft" style={{ margin: 0 }}>
-          자녀 닉네임과 4자리 PIN을 입력해주세요.
+          자녀가 만든 아이디와 비밀번호로 들어와요.
         </p>
-        <KidPinForm />
+        <KidLoginForm />
       </section>
 
       <p style={{ marginTop: 'var(--sp-5)', textAlign: 'center' }}>

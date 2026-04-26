@@ -49,6 +49,10 @@ export type Database = {
       finalize_kid_choices: AnyFunction;
       today_midnight_in_tz: AnyFunction;
       update_family_timezone: AnyFunction;
+      generate_invite_token: AnyFunction;
+      add_kid_to_family: AnyFunction;
+      claim_kid_login: AnyFunction;
+      reset_kid_login_id: AnyFunction;
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
