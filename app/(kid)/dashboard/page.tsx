@@ -6,6 +6,7 @@ import { GoalBanner, GuideCard } from '@/lib/ui/goal-banner';
 import { RememberKidOnMount } from '@/lib/ui/remember-on-mount';
 import { ScrubChart, type ActualHistoryPoint } from '@/lib/ui/scrub-chart';
 import { SubmitButton } from '@/lib/ui/submit-button';
+import { AutoCleanQuery } from '@/lib/ui/auto-clean-query';
 import { kidDeposit } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -82,6 +83,7 @@ export default async function KidDashboardPage({
           <div>{fmt(Number(sp.deposited))} 통장에 들어갔어요!</div>
         </div>
       )}
+      {(sp.deposited || sp.error) && <AutoCleanQuery delayMs={4000} />}
 
       <section className="card" style={{ marginBottom: 'var(--sp-5)', padding: 'var(--sp-5)' }}>
         <div className="row-between" style={{ marginBottom: 'var(--sp-4)' }}>
