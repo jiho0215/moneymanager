@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { loginGuardian } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
-import { KidCodeForm } from '@/lib/ui/kid-code-form';
+import { KidNamesForm } from '@/lib/ui/kid-names-form';
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const sp = await searchParams;
@@ -30,11 +30,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </section>
 
       <section className="card stack-3">
-        <h2 className="h3">🌱 자녀 (코드)</h2>
+        <h2 className="h3">🌱 자녀</h2>
         <p className="soft" style={{ margin: 0 }}>
-          보호자가 발급한 6자 코드를 입력해주세요.
+          자녀 닉네임과 부모님 이름을 입력해주세요.
         </p>
-        <KidCodeForm />
+        <KidNamesForm />
       </section>
 
       <p style={{ marginTop: 'var(--sp-5)', textAlign: 'center' }}>

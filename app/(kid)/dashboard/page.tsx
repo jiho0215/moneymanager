@@ -40,7 +40,6 @@ export default async function KidDashboardPage() {
   return (
     <main className="page">
       <RememberKidOnMount
-        code={ctx.membership.access_code}
         nickname={ctx.membership.display_name}
         guardianName={ctx.guardianName}
       />
