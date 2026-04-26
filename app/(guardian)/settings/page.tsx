@@ -1,18 +1,38 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getGuardianFamilyView } from '@/lib/db/queries';
-import { updateSettings, depositToKid, chooseCycleEnd } from './actions';
+import { updateSettings, depositToKid, chooseCycleEnd, timeWarp } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SettingsPage() {
+const WARP_LABEL: Record<string, string> = {
+  advance_week: '⏩ 1주 앞으로 이동',
+  rewind_week: '⏪ 1주 뒤로 이동',
+  reset_today: '🔄 오늘로 리셋',
+};
+
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ warped?: string; error?: string }> }) {
   const ctx = await getGuardianFamilyView();
   if (!ctx) redirect('/login');
+  const sp = await searchParams;
 
   return (
     <main className="page">
       <h1 className="h1" style={{ marginBottom: 'var(--sp-5)' }}>⚙️ 가족 설정</h1>
+
+      {sp.error && (
+        <div className="alert alert-error fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
+          <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+          <div>{decodeURIComponent(sp.error)}</div>
+        </div>
+      )}
+      {sp.warped && (
+        <div className="alert alert-success fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
+          <span style={{ fontSize: '1.2rem' }}>🕰</span>
+          <div>{WARP_LABEL[sp.warped] ?? sp.warped} 적용됨. dashboard에서 새 잔액 확인 가능.</div>
+        </div>
+      )}
 
       <div className="stack-5">
         {ctx.kids.map((k) => {
@@ -59,6 +79,33 @@ export default async function SettingsPage() {
                   </select>
                   <SubmitButton variant="warn" pendingText="입금 중...">입금</SubmitButton>
                 </form>
+              </fieldset>
+
+              <fieldset className="stack-3" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #ddd6fe 100%)', borderColor: '#9333ea' }}>
+                <legend>🕰 시간 여행 <span className="soft" style={{ fontWeight: 400 }}>(데모/테스트)</span></legend>
+                <p className="soft" style={{ margin: 0 }}>
+                  실제 1주를 안 기다리고 시간을 앞당기거나 되돌릴 수 있어요. 자녀에게 8주 후 모습 미리 보여줄 때 유용.
+                </p>
+                <div className="row gap-2" style={{ flexWrap: 'wrap' }}>
+                  <form action={timeWarp}>
+                    <input type="hidden" name="accountId" value={account.id} />
+                    <input type="hidden" name="action" value="advance_week" />
+                    <SubmitButton variant="success" pendingText="이동 중...">⏩ 1주 앞으로</SubmitButton>
+                  </form>
+                  <form action={timeWarp}>
+                    <input type="hidden" name="accountId" value={account.id} />
+                    <input type="hidden" name="action" value="rewind_week" />
+                    <SubmitButton variant="subtle" pendingText="이동 중...">⏪ 1주 뒤로</SubmitButton>
+                  </form>
+                  <form action={timeWarp}>
+                    <input type="hidden" name="accountId" value={account.id} />
+                    <input type="hidden" name="action" value="reset_today" />
+                    <SubmitButton variant="warn" pendingText="리셋 중...">🔄 오늘로 리셋</SubmitButton>
+                  </form>
+                </div>
+                <p className="soft" style={{ margin: 0, fontSize: '0.85rem' }}>
+                  💡 시간을 앞당긴 후 자녀가 청구하면 진짜로 잔액이 자라요. 데모 후 &lsquo;오늘로 리셋&rsquo;으로 돌아오면 됩니다.
+                </p>
               </fieldset>
 
               {account.cycle_status === 'active' && (

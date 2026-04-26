@@ -72,6 +72,56 @@ export async function depositToKid(formData: FormData): Promise<void> {
   redirect('/settings');
 }
 
+export async function timeWarp(formData: FormData): Promise<void> {
+  const reqId = generateRequestId();
+  const accountId = String(formData.get('accountId') ?? '');
+  const action = String(formData.get('action'));
+  if (!accountId || !['advance_week', 'rewind_week', 'reset_today'].includes(action)) {
+    redirect('/settings?error=invalid');
+  }
+
+  const admin = getSupabaseAdmin();
+  const { data: account, error: gErr } = await admin
+    .from('accounts')
+    .select('epoch_kst')
+    .eq('id', accountId)
+    .single();
+  if (gErr || !account) redirect('/settings?error=' + encodeURIComponent('account not found'));
+  const epoch = (account as { epoch_kst: string }).epoch_kst;
+  const now = new Date();
+  let newEpoch: Date;
+
+  if (action === 'advance_week') {
+    // Shift epoch BACKWARD by 7 days = current week_num +1
+    newEpoch = new Date(new Date(epoch).getTime() - 7 * 24 * 60 * 60 * 1000);
+  } else if (action === 'rewind_week') {
+    newEpoch = new Date(new Date(epoch).getTime() + 7 * 24 * 60 * 60 * 1000);
+  } else {
+    // reset_today: epoch = next Monday 00:00 KST from NOW
+    const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const daysUntilMonday = (8 - kstNow.getUTCDay()) % 7 || 7;
+    const monday = new Date(kstNow);
+    monday.setUTCHours(0, 0, 0, 0);
+    monday.setUTCDate(monday.getUTCDate() + daysUntilMonday);
+    newEpoch = new Date(monday.getTime() - 9 * 60 * 60 * 1000);
+  }
+
+  const { error } = await admin
+    .from('accounts')
+    .update({ epoch_kst: newEpoch.toISOString(), updated_at: new Date().toISOString() })
+    .eq('id', accountId);
+  if (error) {
+    logger.error('timeWarp: failed', { request_id: reqId, error_code: error.message });
+    redirect('/settings?error=' + encodeURIComponent(error.message));
+  }
+
+  logger.info('timeWarp: success', { request_id: reqId, action: `time_warp_${action}`, success: true });
+  revalidatePath('/settings');
+  revalidatePath('/dashboard');
+  revalidatePath('/guardian');
+  redirect('/settings?warped=' + encodeURIComponent(action));
+}
+
 export async function chooseCycleEnd(formData: FormData): Promise<void> {
   const reqId = generateRequestId();
   const accountId = String(formData.get('accountId') ?? '');

@@ -62,7 +62,7 @@ export async function getGuardianFamilyView() {
 
   const { data: kids } = await supabase
     .from('memberships')
-    .select('id, display_name, age_tier, grade, user_id')
+    .select('id, display_name, age_tier, grade, user_id, access_code')
     .eq('family_id', guardian.family_id)
     .eq('role', 'kid');
 
