@@ -28,6 +28,7 @@ const fmtKRW = fmtKRWShort;
 const fmtFull = fmtFullKRW;
 
 type Mode = 'years' | 'weeks';
+type Scenario = 'one-time' | 'regular';
 type Milestone = { from: number; to: number; emoji: string; title: string; sub: string };
 const MILESTONES: Milestone[] = [
   { from: 0, to: 1, emoji: '🐷', title: '아직 비슷해 보이지?', sub: '슬라이더를 더 끌어봐. 곡선이 갈라지기 시작해.' },
@@ -55,6 +56,7 @@ export function ScrubChart() {
   const [tick, setTick] = useState(8);
   const [maxTicks, setMaxTicks] = useState(20);
   const [mode, setMode] = useState<Mode>('years');
+  const [scenario, setScenario] = useState<Scenario>('regular');
   const [principal, setPrincipal] = useState(10_000);
   const [ratePct, setRatePct] = useState(10);
   const [addition, setAddition] = useState(1_000);
@@ -97,19 +99,26 @@ export function ScrubChart() {
   }
 
   const series = useMemo(() => {
-    const arr: { t: number; piggy: number; passive: number; active: number }[] = [];
+    const arr: { t: number; piggy: number; compound: number }[] = [];
     for (let t = 0; t <= maxTicks; t += 1) {
-      arr.push({
-        t,
-        piggy: piggyAt(principal, addition, t),
-        passive: compoundPassiveAt(principal, rateBp, t),
-        active: compoundActiveAt(principal, addition, rateBp, t),
-      });
+      if (scenario === 'one-time') {
+        arr.push({
+          t,
+          piggy: principal, // sits flat — no addition, no interest
+          compound: compoundPassiveAt(principal, rateBp, t),
+        });
+      } else {
+        arr.push({
+          t,
+          piggy: piggyAt(principal, addition, t), // linear: principal + addition*t
+          compound: compoundActiveAt(principal, addition, rateBp, t),
+        });
+      }
     }
     return arr;
-  }, [principal, rateBp, addition, maxTicks]);
+  }, [principal, rateBp, addition, maxTicks, scenario]);
 
-  const yMax = Math.max(series[series.length - 1]!.active, principal * 2);
+  const yMax = Math.max(series[series.length - 1]!.compound, principal * 2);
   const yMin = principal;
 
   const innerW = VIEWBOX_W - MARGIN.left - MARGIN.right;
@@ -120,8 +129,7 @@ export function ScrubChart() {
     MARGIN.top + innerH - ((val - yMin) / Math.max(1, yMax - yMin)) * innerH;
 
   const piggyPath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.piggy)}`).join(' ');
-  const passivePath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.passive)}`).join(' ');
-  const activePath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.active)}`).join(' ');
+  const compoundPath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.compound)}`).join(' ');
 
   const xTicks = getXTicks(maxTicks);
   const yTicks = [yMin, yMin + (yMax - yMin) * 0.25, yMin + (yMax - yMin) * 0.5, yMin + (yMax - yMin) * 0.75, yMax];
@@ -131,6 +139,56 @@ export function ScrubChart() {
 
   return (
     <div className="stack-4">
+      {/* Scenario tabs */}
+      <div className="card" style={{ padding: 'var(--sp-2)' }}>
+        <div role="tablist" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-2)' }}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={scenario === 'one-time'}
+            onClick={() => setScenario('one-time')}
+            style={{
+              padding: '12px 14px',
+              border: 'none',
+              borderRadius: 'var(--r-md)',
+              background: scenario === 'one-time' ? 'linear-gradient(135deg, #ecfdf5 0%, #fdf2f8 100%)' : 'var(--surface-2)',
+              color: scenario === 'one-time' ? 'var(--text)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontSize: '0.92rem',
+              fontWeight: scenario === 'one-time' ? 700 : 500,
+              boxShadow: scenario === 'one-time' ? '0 0 0 2px var(--experiment) inset' : undefined,
+              transition: 'all 150ms',
+            }}
+          >
+            <div style={{ fontSize: '1.1rem', marginBottom: 2 }}>1️⃣ 한 번 저축</div>
+            <div className="soft" style={{ fontSize: '0.78rem', fontWeight: 400 }}>시드머니만 넣고 가만히</div>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={scenario === 'regular'}
+            onClick={() => setScenario('regular')}
+            style={{
+              padding: '12px 14px',
+              border: 'none',
+              borderRadius: 'var(--r-md)',
+              background: scenario === 'regular' ? 'linear-gradient(135deg, #ecfdf5 0%, #fdf2f8 100%)' : 'var(--surface-2)',
+              color: scenario === 'regular' ? 'var(--text)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontSize: '0.92rem',
+              fontWeight: scenario === 'regular' ? 700 : 500,
+              boxShadow: scenario === 'regular' ? '0 0 0 2px var(--experiment) inset' : undefined,
+              transition: 'all 150ms',
+            }}
+          >
+            <div style={{ fontSize: '1.1rem', marginBottom: 2 }}>2️⃣ 꾸준히 적금</div>
+            <div className="soft" style={{ fontSize: '0.78rem', fontWeight: 400 }}>매번 일정 금액 추가</div>
+          </button>
+        </div>
+      </div>
+
       {/* Controls */}
       <div className="card stack-3">
         <div className="row-between" style={{ flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
@@ -188,11 +246,13 @@ export function ScrubChart() {
             ))}
           </ControlField>
 
-          <ControlField label={`💵 매 ${unit} 추가 저금`} value={fmtFull(addition)} valueColor="#ec4899">
-            {PRESET_ADDITIONS.map((a) => (
-              <Chip key={a} active={addition === a} onClick={() => setAddition(a)}>{a === 0 ? '0' : fmtKRW(a)}</Chip>
-            ))}
-          </ControlField>
+          {scenario === 'regular' && (
+            <ControlField label={`💵 매 ${unit} 적금`} value={fmtFull(addition)} valueColor="#ec4899">
+              {PRESET_ADDITIONS.map((a) => (
+                <Chip key={a} active={addition === a} onClick={() => setAddition(a)}>{a === 0 ? '0' : fmtKRW(a)}</Chip>
+              ))}
+            </ControlField>
+          )}
 
           <ControlField label={`📅 기간 (최대 ${unit})`} value={`${maxTicks}${unit}`} valueColor="var(--bonus-deep)">
             {PRESET_RANGES.map((r) => (
@@ -298,10 +358,9 @@ export function ScrubChart() {
             </g>
           ))}
 
-          {/* Three lines, in z-order: piggy (bottom), passive (mid), active (top/winner) */}
-          <path d={piggyPath} fill="none" stroke="#ec4899" strokeWidth={2.5} strokeDasharray="2 4" />
-          <path d={passivePath} fill="none" stroke="#86efac" strokeWidth={2.5} strokeDasharray="6 4" />
-          <path d={activePath} fill="none" stroke="#16a34a" strokeWidth={3.5} />
+          {/* Two lines: piggy (loser, dashed) vs compound (winner, solid thick) */}
+          <path d={piggyPath} fill="none" stroke="#ec4899" strokeWidth={2.5} strokeDasharray="6 4" />
+          <path d={compoundPath} fill="none" stroke="#16a34a" strokeWidth={3.5} />
 
           {/* Vertical indicator */}
           <line
@@ -314,10 +373,9 @@ export function ScrubChart() {
             strokeDasharray="4 4"
           />
 
-          {/* Dots at current tick for each scenario */}
-          <circle cx={xScale(tick)} cy={yScale(cur.piggy)} r={5} fill="#ec4899" stroke="white" strokeWidth={2} />
-          <circle cx={xScale(tick)} cy={yScale(cur.passive)} r={5} fill="#86efac" stroke="white" strokeWidth={2} />
-          <circle cx={xScale(tick)} cy={yScale(cur.active)} r={7} fill="#16a34a" stroke="white" strokeWidth={2.5} />
+          {/* Dots at current tick for each line */}
+          <circle cx={xScale(tick)} cy={yScale(cur.piggy)} r={6} fill="#ec4899" stroke="white" strokeWidth={2} />
+          <circle cx={xScale(tick)} cy={yScale(cur.compound)} r={7} fill="#16a34a" stroke="white" strokeWidth={2.5} />
 
           {/* Tick badge */}
           <g transform={`translate(${xScale(tick)}, ${MARGIN.top - 10})`}>
@@ -336,48 +394,45 @@ export function ScrubChart() {
 
         <div className="row gap-4" style={{ flexWrap: 'wrap', justifyContent: 'center', marginTop: 'var(--sp-3)', fontSize: '0.85rem' }}>
           <span className="row gap-2" style={{ alignItems: 'center' }}>
-            <span style={{ display: 'inline-block', width: 22, borderTop: '3px dotted #ec4899' }} />
-            <span><strong>🐷 돼지저금통</strong> <span className="muted">이자 없이 모음</span></span>
-          </span>
-          <span className="row gap-2" style={{ alignItems: 'center' }}>
-            <span style={{ display: 'inline-block', width: 22, borderTop: '3px dashed #86efac' }} />
-            <span><strong>🌿 복리 (가만히)</strong> <span className="muted">한 번 넣고 안 만짐</span></span>
+            <span style={{ display: 'inline-block', width: 22, borderTop: '3px dashed #ec4899' }} />
+            <span><strong>🐷 돼지저금통</strong> <span className="muted">{scenario === 'one-time' ? '이자 없이 그대로' : '이자 없이 적금'}</span></span>
           </span>
           <span className="row gap-2" style={{ alignItems: 'center' }}>
             <span style={{ display: 'inline-block', width: 22, borderTop: '4px solid #16a34a' }} />
-            <span><strong>🌳 복리 (꾸준히)</strong> <span className="muted">매번 추가 + 이자</span></span>
+            <span><strong>🌳 복리</strong> <span className="muted">{scenario === 'one-time' ? `${ratePct}%씩 자람` : `적금 + ${ratePct}% 이자`}</span></span>
           </span>
         </div>
       </div>
 
-      {/* Live stats — 3 cards */}
-      <div className="grid-3">
+      {/* Live stats — 2 cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--sp-3)' }}>
         <ScenarioCard
           icon="🐷"
           tint="pink"
           label="돼지저금통"
-          subtitle={addition === 0 ? '아무것도 안 함' : `매${unit} +${fmtKRW(addition)}원만`}
+          subtitle={
+            scenario === 'one-time'
+              ? '한 번 넣고 가만히'
+              : `매${unit} +${fmtKRW(addition)} (이자 없음)`
+          }
           amount={cur.piggy}
-        />
-        <ScenarioCard
-          icon="🌿"
-          tint="passive"
-          label="복리 (가만히)"
-          subtitle={`${ratePct}%씩 누적`}
-          amount={cur.passive}
         />
         <ScenarioCard
           icon="🌳"
           tint="active"
-          label="복리 (꾸준히)"
-          subtitle={addition === 0 ? `${ratePct}%만 (추가 없음)` : `매${unit} +${fmtKRW(addition)} & ${ratePct}%`}
-          amount={cur.active}
+          label="복리"
+          subtitle={
+            scenario === 'one-time'
+              ? `한 번 넣고 ${ratePct}%씩 자람`
+              : `매${unit} +${fmtKRW(addition)} & ${ratePct}%씩`
+          }
+          amount={cur.compound}
           highlight
         />
       </div>
 
       {/* Multiplier vs piggy */}
-      {cur.piggy > 0 && cur.active > cur.piggy && (
+      {cur.piggy > 0 && cur.compound > cur.piggy && (
         <div
           className="card"
           style={{
@@ -386,12 +441,12 @@ export function ScrubChart() {
             textAlign: 'center',
           }}
         >
-          <div className="soft" style={{ marginBottom: 4 }}>꾸준한 복리 vs 돼지저금통</div>
+          <div className="soft" style={{ marginBottom: 4 }}>복리 vs 돼지저금통</div>
           <div className="amount" style={{ fontSize: '1.5rem', color: 'var(--experiment-deep)' }}>
-            <strong>{(cur.active / cur.piggy).toFixed(2)}배</strong> 차이!
+            <strong>{(cur.compound / cur.piggy).toFixed(2)}배</strong> 차이!
           </div>
           <div className="soft" style={{ marginTop: 4 }}>
-            +{fmtFull(cur.active - cur.piggy)} 더
+            +{fmtFull(cur.compound - cur.piggy)} 더
           </div>
         </div>
       )}
