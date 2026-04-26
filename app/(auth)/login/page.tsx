@@ -1,9 +1,26 @@
 import { loginGuardian, loginAsKidWithCode } from './actions';
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const sp = await searchParams;
   return (
     <main style={{ maxWidth: '460px', margin: '0 auto', padding: '40px 24px' }}>
       <h1 style={{ fontSize: '1.75rem', marginBottom: '2rem' }}>로그인</h1>
+
+      {sp.error && (
+        <div
+          role="alert"
+          style={{
+            padding: '12px 16px',
+            backgroundColor: '#fee2e2',
+            border: '1px solid #fca5a5',
+            borderRadius: '6px',
+            color: '#991b1b',
+            marginBottom: '1rem',
+          }}
+        >
+          ⚠️ {decodeURIComponent(sp.error)}
+        </div>
+      )}
 
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>👨‍👩‍👧 보호자</h2>

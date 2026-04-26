@@ -11,89 +11,71 @@ const PIPA_TEXT = `[개인정보 수집 및 이용 동의 — 만 14세 미만 �
 
 본 동의는 PIPA Article 22 에 따른 명시적 법정대리인 동의입니다.`;
 
-export default function SignupPage() {
+export default async function SignupPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const sp = await searchParams;
   return (
     <main style={{ maxWidth: '560px', margin: '0 auto', padding: '40px 24px' }}>
       <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>🌱 가족 가입</h1>
       <p style={{ color: '#666', marginBottom: '2rem' }}>보호자가 자녀 계정을 함께 생성합니다.</p>
 
+      {sp.error && (
+        <div
+          role="alert"
+          style={{
+            padding: '12px 16px',
+            backgroundColor: '#fee2e2',
+            border: '1px solid #fca5a5',
+            borderRadius: '6px',
+            color: '#991b1b',
+            marginBottom: '1rem',
+          }}
+        >
+          ⚠️ {decodeURIComponent(sp.error)}
+        </div>
+      )}
+
       <form action={signupFamily} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <fieldset style={{ border: '1px solid #ddd', padding: '1rem', borderRadius: '8px' }}>
           <legend style={{ padding: '0 8px', fontWeight: 'bold' }}>보호자 정보</legend>
           <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-            이메일
-            <input
-              type="email"
-              name="guardianEmail"
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            이메일 *
+            <input type="email" name="guardianEmail" required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </label>
           <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-            비밀번호 (8자 이상)
-            <input
-              type="password"
-              name="guardianPassword"
-              minLength={8}
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            비밀번호 (8자 이상) *
+            <input type="password" name="guardianPassword" minLength={8} required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </label>
           <label style={{ display: 'block' }}>
             보호자 표시명 (선택)
-            <input
-              type="text"
-              name="guardianDisplayName"
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            <input type="text" name="guardianDisplayName" style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </label>
         </fieldset>
 
         <fieldset style={{ border: '1px solid #ddd', padding: '1rem', borderRadius: '8px' }}>
           <legend style={{ padding: '0 8px', fontWeight: 'bold' }}>가족 + 자녀</legend>
           <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-            가족 이름
-            <input
-              type="text"
-              name="familyName"
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            가족 이름 *
+            <input type="text" name="familyName" required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </label>
           <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-            자녀 닉네임
-            <input
-              type="text"
-              name="kidNickname"
-              required
-              maxLength={20}
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            자녀 닉네임 *
+            <input type="text" name="kidNickname" required maxLength={20} style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </label>
           <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-            자녀 학년 (5 또는 6)
+            자녀 학년 (5 또는 6) *
             <select name="kidGrade" required style={{ width: '100%', padding: '8px', marginTop: '4px' }}>
               <option value="5">5학년</option>
               <option value="6">6학년</option>
             </select>
           </label>
           <label style={{ display: 'block' }}>
-            시작 자금 (KRW, 추천 10,000원)
-            <input
-              type="number"
-              name="startingCapital"
-              defaultValue={10000}
-              min={1000}
-              max={1000000}
-              step={1000}
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            시작 자금 (KRW, 추천 10,000원) *
+            <input type="number" name="startingCapital" defaultValue={10000} min={1000} max={1000000} step={1000} required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </label>
         </fieldset>
 
         <fieldset style={{ border: '1px solid #ddd', padding: '1rem', borderRadius: '8px' }}>
-          <legend style={{ padding: '0 8px', fontWeight: 'bold' }}>법정대리인 동의 (PIPA)</legend>
+          <legend style={{ padding: '0 8px', fontWeight: 'bold' }}>법정대리인 동의 (PIPA) *</legend>
           <pre
             style={{
               fontSize: '0.85rem',
@@ -108,7 +90,7 @@ export default function SignupPage() {
             {PIPA_TEXT}
           </pre>
           <label style={{ display: 'block', marginTop: '0.5rem' }}>
-            <input type="checkbox" name="consent" required /> 위 내용에 동의합니다.
+            <input type="checkbox" name="consent" required /> 위 내용에 동의합니다. *
           </label>
         </fieldset>
 

@@ -73,7 +73,7 @@ describe('Migration UP scripts: schema integrity', () => {
            AND event_object_table IN ('transactions', 'consents')
          ORDER BY trigger_name`
       );
-      const names = rows.map((r) => r.trigger_name);
+      const names = rows.map((r: { trigger_name: string }) => r.trigger_name);
       expect(names).toContain('transactions_no_update');
       expect(names).toContain('transactions_no_delete');
       expect(names).toContain('consents_no_update');
