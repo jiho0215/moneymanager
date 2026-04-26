@@ -1,8 +1,8 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getGuardianFamilyView } from '@/lib/db/queries';
 import { rotateKidCode } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
+import { CopyButton } from '@/lib/ui/copy-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,6 +64,16 @@ export default async function KidAccessPage({ searchParams }: { searchParams: Pr
               <div className="soft" style={{ marginTop: 8 }}>
                 자녀에게 이 6자만 알려주면 끝. 영구적으로 사용 가능.
               </div>
+              {kid.access_code && (
+                <div className="row gap-2" style={{ justifyContent: 'center', marginTop: 'var(--sp-3)', flexWrap: 'wrap' }}>
+                  <CopyButton value={kid.access_code} label="코드 복사" />
+                  <CopyButton
+                    value={`${kid.display_name}의 로그인 코드: ${kid.access_code}\n\nhttps://moneymanager-wine.vercel.app/login 에서 입력하면 들어와집니다.`}
+                    label="안내문 복사"
+                    size="sm"
+                  />
+                </div>
+              )}
             </div>
 
             <details>

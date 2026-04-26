@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { loginGuardian, loginAsKidWithCode } from './actions';
+import { loginGuardian } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
+import { KidCodeForm } from '@/lib/ui/kid-code-form';
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const sp = await searchParams;
@@ -33,20 +34,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <p className="soft" style={{ margin: 0 }}>
           보호자가 발급한 6자 코드를 입력해주세요.
         </p>
-        <form action={loginAsKidWithCode} className="stack-2">
-          <input
-            type="text"
-            name="code"
-            placeholder="ABCDEF"
-            maxLength={6}
-            minLength={6}
-            required
-            style={{ textTransform: 'uppercase', letterSpacing: '0.4em', fontSize: '1.3rem', textAlign: 'center', fontWeight: 700 }}
-          />
-          <SubmitButton variant="success" pendingText="확인 중...">
-            들어가기
-          </SubmitButton>
-        </form>
+        <KidCodeForm />
       </section>
 
       <p style={{ marginTop: 'var(--sp-5)', textAlign: 'center' }}>
