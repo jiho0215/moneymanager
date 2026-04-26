@@ -217,10 +217,13 @@ export function ScrubChart() {
           border: '1px solid var(--border)',
         }}
       >
-        <div className="row-between" style={{ marginBottom: 'var(--sp-3)', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
+        <div className="row-between" style={{ marginBottom: 'var(--sp-2)', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
           <strong>⏱ 시간을 끌어봐</strong>
           <span className="badge badge-info">{tick}{unit} 후</span>
         </div>
+        <p className="soft" style={{ margin: '0 0 var(--sp-3)', fontSize: '0.85rem' }}>
+          👆 차트를 끌어서 시간을 바꿔봐
+        </p>
 
         <svg
           ref={svgRef}
@@ -330,10 +333,6 @@ export function ScrubChart() {
             <path d="M -3 -2 L 3 -2 M -3 2 L 3 2" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
           </g>
         </svg>
-
-        <p className="soft" style={{ textAlign: 'center', margin: 'var(--sp-2) 0 0', fontSize: '0.85rem' }}>
-          👆 차트를 끌어서 시간을 바꿔봐 (또는 좌우 화살표 키)
-        </p>
 
         <div className="row gap-4" style={{ flexWrap: 'wrap', justifyContent: 'center', marginTop: 'var(--sp-3)', fontSize: '0.85rem' }}>
           <span className="row gap-2" style={{ alignItems: 'center' }}>
