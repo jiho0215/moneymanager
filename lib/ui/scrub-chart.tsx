@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 
 const MAX_TICKS = 50;
 const VIEWBOX_W = 720;
@@ -48,10 +49,38 @@ export function ScrubChart() {
   const [mode, setMode] = useState<Mode>('years');
   const [principal, setPrincipal] = useState(10_000);
   const [ratePct, setRatePct] = useState(10);
+  const [dragging, setDragging] = useState(false);
+  const svgRef = useRef<SVGSVGElement>(null);
   const rateBp = ratePct * 100;
 
   const unit = mode === 'years' ? '년' : '주';
   const unitLong = mode === 'years' ? '년' : '주';
+
+  function pickFromPointer(e: ReactPointerEvent<SVGSVGElement>) {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const ratio = VIEWBOX_W / rect.width;
+    const xInViewbox = (e.clientX - rect.left) * ratio;
+    const xInPlot = xInViewbox - MARGIN.left;
+    const innerW = VIEWBOX_W - MARGIN.left - MARGIN.right;
+    const t = Math.round((xInPlot / innerW) * MAX_TICKS);
+    setTick(Math.max(0, Math.min(MAX_TICKS, t)));
+  }
+  function onPointerDown(e: ReactPointerEvent<SVGSVGElement>) {
+    e.preventDefault();
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    setDragging(true);
+    pickFromPointer(e);
+  }
+  function onPointerMove(e: ReactPointerEvent<SVGSVGElement>) {
+    if (!dragging) return;
+    pickFromPointer(e);
+  }
+  function onPointerUp(e: ReactPointerEvent<SVGSVGElement>) {
+    setDragging(false);
+    (e.target as Element).releasePointerCapture?.(e.pointerId);
+  }
 
   const series = useMemo(() => {
     const arr: { tick: number; simple: number; compound: number }[] = [];
@@ -219,13 +248,41 @@ export function ScrubChart() {
           <span className="badge badge-info">{tick}{unitLong} 후</span>
         </div>
         <svg
+          ref={svgRef}
           width="100%"
           height="auto"
           viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
           preserveAspectRatio="xMidYMid meet"
-          role="img"
-          aria-label="단리와 복리 비교 차트"
-          style={{ display: 'block', maxWidth: '100%' }}
+          role="slider"
+          aria-label="시간을 끌어서 변경"
+          aria-valuemin={0}
+          aria-valuemax={MAX_TICKS}
+          aria-valuenow={tick}
+          tabIndex={0}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+              e.preventDefault();
+              setTick((t) => Math.max(0, t - 1));
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+              e.preventDefault();
+              setTick((t) => Math.min(MAX_TICKS, t + 1));
+            } else if (e.key === 'Home') {
+              setTick(0);
+            } else if (e.key === 'End') {
+              setTick(MAX_TICKS);
+            }
+          }}
+          style={{
+            display: 'block',
+            maxWidth: '100%',
+            cursor: dragging ? 'grabbing' : 'grab',
+            touchAction: 'none',
+            userSelect: 'none',
+          }}
         >
           {yTicks.map((t, i) => (
             <g key={`yt-${i}`}>
@@ -281,34 +338,21 @@ export function ScrubChart() {
           <circle cx={xScale(tick)} cy={yScale(cur.compound)} r={7} fill="#16a34a" stroke="white" strokeWidth={2} />
 
           <g transform={`translate(${xScale(tick)}, ${MARGIN.top - 10})`}>
-            <rect x={-26} y={-12} width={52} height={20} rx={10} fill="#2563eb" />
-            <text x={0} y={3} fontSize={11} fontWeight={700} fill="white" textAnchor="middle">
+            <rect x={-30} y={-13} width={60} height={22} rx={11} fill="#2563eb" />
+            <text x={0} y={4} fontSize={12} fontWeight={700} fill="white" textAnchor="middle">
               {tick}{unit} 후
             </text>
           </g>
+          {/* Drag handle at bottom of indicator (clearly grabbable) */}
+          <g transform={`translate(${xScale(tick)}, ${MARGIN.top + innerH})`} style={{ pointerEvents: 'none' }}>
+            <circle r={11} fill="#2563eb" stroke="white" strokeWidth={3} style={{ filter: 'drop-shadow(0 2px 4px rgba(37,99,235,0.4))' }} />
+            <path d="M -3 -2 L 3 -2 M -3 2 L 3 2" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+          </g>
         </svg>
 
-        {/* Slider — aligned with chart x-axis */}
-        <div
-          style={{
-            // Match the SVG's inner plot horizontal range so thumb tracks indicator
-            paddingLeft: `${(MARGIN.left / VIEWBOX_W) * 100}%`,
-            paddingRight: `${(MARGIN.right / VIEWBOX_W) * 100}%`,
-            marginTop: -8,
-          }}
-        >
-          <input
-            type="range"
-            min={0}
-            max={MAX_TICKS}
-            step={1}
-            value={tick}
-            onChange={(e) => setTick(Number(e.target.value))}
-            aria-label={`${unitLong} 수 선택`}
-            className="scrub-slider"
-            style={{ width: '100%', height: 36, background: 'transparent', cursor: 'pointer' }}
-          />
-        </div>
+        <p className="soft" style={{ textAlign: 'center', margin: 'var(--sp-2) 0 0', fontSize: '0.85rem' }}>
+          👆 차트를 끌어서 시간을 바꿔봐 (또는 좌우 화살표 키)
+        </p>
 
         <div className="row gap-4" style={{ flexWrap: 'wrap', justifyContent: 'center', marginTop: 'var(--sp-3)', fontSize: '0.9rem' }}>
           <span className="row gap-2" style={{ alignItems: 'center' }}>
