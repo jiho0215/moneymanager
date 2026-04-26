@@ -1,4 +1,5 @@
 import { signupFamily } from './actions';
+import { SubmitButton } from '@/lib/ui/submit-button';
 
 const PIPA_TEXT = `[개인정보 수집 및 이용 동의 — 만 14세 미만 자녀]
 
@@ -127,20 +128,9 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         {/* Error also shown right above the submit button so it's visible regardless of scroll */}
         {errorMsg && <ErrorAlert message={errorMsg} showLoginLink={showLoginLink} />}
 
-        <button
-          type="submit"
-          style={{
-            padding: '12px',
-            backgroundColor: '#2563eb',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '1rem',
-            cursor: 'pointer',
-          }}
-        >
+        <SubmitButton variant="primary" pendingText="가족 만드는 중...">
           가족 만들기
-        </button>
+        </SubmitButton>
       </form>
 
       <p style={{ marginTop: '1rem', textAlign: 'center', color: '#666' }}>

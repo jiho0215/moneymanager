@@ -2,6 +2,7 @@ import { getGuardianFamilyView } from '@/lib/db/queries';
 import { getSupabaseServerClient } from '@/lib/db/client';
 import { redirect } from 'next/navigation';
 import { issueKidCode } from './actions';
+import { SubmitButton } from '@/lib/ui/submit-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,9 +52,9 @@ export default async function KidAccessPage({ searchParams }: { searchParams: Pr
             <h2 style={{ marginTop: 0 }}>{kid.display_name}</h2>
             <form action={issueKidCode}>
               <input type="hidden" name="kidMembershipId" value={kid.id} />
-              <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '6px' }}>
+              <SubmitButton variant="success" pendingText="발급 중..." style={{ padding: '10px 20px' }}>
                 새 코드 발급
-              </button>
+              </SubmitButton>
             </form>
           </section>
         );

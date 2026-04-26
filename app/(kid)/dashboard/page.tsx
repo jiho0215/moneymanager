@@ -2,6 +2,7 @@ import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
 import { logout } from '@/app/(auth)/login/actions';
 import { transferToExperiment } from './actions';
+import { SubmitButton } from '@/lib/ui/submit-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,9 +92,9 @@ export default async function KidDashboardPage() {
             required
             style={{ flex: 1, padding: '8px' }}
           />
-          <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#ff9800', color: 'white', border: 'none', borderRadius: '4px' }}>
+          <SubmitButton variant="warn" pendingText="옮기는 중..." style={{ padding: '8px 16px' }}>
             옮기기
-          </button>
+          </SubmitButton>
         </form>
       </section>
 

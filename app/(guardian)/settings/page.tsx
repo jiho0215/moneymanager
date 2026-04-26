@@ -1,6 +1,7 @@
 import { getGuardianFamilyView } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
 import { updateSettings, depositToKid, chooseCycleEnd } from './actions';
+import { SubmitButton } from '@/lib/ui/submit-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,9 +34,9 @@ export default async function SettingsPage() {
               <p style={{ fontSize: '0.85rem', color: '#666', margin: 0 }}>
                 참고: 매칭 비율 변경은 미래 매칭에만 적용됩니다 (이미 매칭된 보너스는 그대로).
               </p>
-              <button type="submit" style={{ padding: '10px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px' }}>
+              <SubmitButton variant="primary" pendingText="저장 중..." style={{ padding: '10px' }}>
                 저장
-              </button>
+              </SubmitButton>
             </form>
 
             <h3 style={{ marginTop: 0 }}>💰 추가 입금</h3>
@@ -46,9 +47,9 @@ export default async function SettingsPage() {
                 <option value="free">자유 영역</option>
                 <option value="experiment">실험 영역 (보너스 매칭)</option>
               </select>
-              <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#ff9800', color: 'white', border: 'none', borderRadius: '4px' }}>
+              <SubmitButton variant="warn" pendingText="입금 중..." style={{ padding: '8px 16px' }}>
                 입금
-              </button>
+              </SubmitButton>
             </form>
 
             {account.cycle_status === 'active' && (
@@ -62,9 +63,9 @@ export default async function SettingsPage() {
                     <option value="reset">새 사이클 시작 (reset)</option>
                   </select>
                   <input type="number" name="newStartingCapital" placeholder="reset 시 시작자금" min={1000} step={1000} style={{ padding: '8px', flex: 1 }} />
-                  <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#9333ea', color: 'white', border: 'none', borderRadius: '4px' }}>
+                  <SubmitButton variant="primary" pendingText="실행 중..." style={{ padding: '8px 16px', backgroundColor: '#9333ea' }}>
                     실행
-                  </button>
+                  </SubmitButton>
                 </form>
               </>
             )}

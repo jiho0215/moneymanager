@@ -2,6 +2,7 @@ import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
 import { generateProblem } from '@/lib/domain/mathgen';
 import { submitClaimAnswer } from './actions';
+import { SubmitButton } from '@/lib/ui/submit-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,12 +77,9 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
           autoComplete="off"
           style={{ padding: '14px', fontSize: '1.4rem', textAlign: 'center', borderRadius: '8px', border: '2px solid #ddd' }}
         />
-        <button
-          type="submit"
-          style={{ padding: '14px', fontSize: '1.1rem', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px' }}
-        >
+        <SubmitButton variant="success" pendingText="확인 중..." style={{ padding: '14px', fontSize: '1.1rem', borderRadius: '8px' }}>
           제출하기
-        </button>
+        </SubmitButton>
         <a href="/dashboard" style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
           ← 다음에 풀기
         </a>

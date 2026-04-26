@@ -1,4 +1,5 @@
 import { loginGuardian, loginAsKidWithCode } from './actions';
+import { SubmitButton } from '@/lib/ui/submit-button';
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const sp = await searchParams;
@@ -27,12 +28,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <form action={loginGuardian} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <input type="email" name="email" placeholder="이메일" required style={{ padding: '10px' }} />
           <input type="password" name="password" placeholder="비밀번호" required style={{ padding: '10px' }} />
-          <button
-            type="submit"
-            style={{ padding: '10px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px' }}
-          >
+          <SubmitButton variant="primary" pendingText="로그인 중..." style={{ padding: '10px' }}>
             로그인
-          </button>
+          </SubmitButton>
         </form>
       </section>
 
@@ -51,12 +49,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             required
             style={{ padding: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: '1.2rem', textAlign: 'center' }}
           />
-          <button
-            type="submit"
-            style={{ padding: '10px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '4px' }}
-          >
+          <SubmitButton variant="success" pendingText="확인 중..." style={{ padding: '10px' }}>
             들어가기
-          </button>
+          </SubmitButton>
         </form>
       </section>
 
