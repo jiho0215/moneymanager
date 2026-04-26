@@ -47,7 +47,17 @@ export async function signupFamily(formData: FormData): Promise<void> {
   });
   if (gErr || !gAuth.user) {
     logger.error('signup: guardian create failed', { request_id: reqId, error_code: gErr?.message });
-    redirect('/signup?error=' + encodeURIComponent(gErr?.message ?? 'guardian 생성 실패'));
+    const msg = gErr?.message ?? '';
+    if (msg.includes('already been registered')) {
+      redirect('/signup?error=' + encodeURIComponent('이미 가입된 이메일이에요. 로그인 페이지에서 로그인해주세요.'));
+    }
+    if (msg.toLowerCase().includes('weak password') || msg.toLowerCase().includes('password should')) {
+      redirect('/signup?error=' + encodeURIComponent('비밀번호가 너무 약해요. 8자 이상에 숫자와 글자를 섞어주세요.'));
+    }
+    if (msg.toLowerCase().includes('invalid email')) {
+      redirect('/signup?error=' + encodeURIComponent('이메일 형식이 올바르지 않아요.'));
+    }
+    redirect('/signup?error=' + encodeURIComponent('가입 실패: ' + msg));
   }
   const guardianUserId = gAuth.user.id;
 
