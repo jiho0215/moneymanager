@@ -108,7 +108,6 @@ export default async function KidDashboardPage() {
           <li><strong>저금</strong>: 통장에 들어있는 너의 원금이에요.</li>
           <li><strong>이자</strong>: 매주 산수 풀고 청구하면 통장 전체가 10% 자라요.</li>
           <li><strong>매주 일요일</strong>: 가족 시간! 산수 한 문제 풀고 이자 받기.</li>
-          <li><strong>4주 안에 청구 안 하면</strong>: 그 다음부터 한 주씩 사라져요. 의식이 가치예요.</li>
         </ul>
       </GuideCard>
     </main>
