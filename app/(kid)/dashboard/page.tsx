@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
 import { GoalBanner, GuideCard } from '@/lib/ui/goal-banner';
 import { RememberKidOnMount } from '@/lib/ui/remember-on-mount';
+import { ProjectionChart } from '@/lib/ui/projection-chart';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,22 +47,16 @@ export default async function KidDashboardPage() {
         />
       </div>
 
-      {canClaimNow && (
-        <div style={{ marginBottom: 'var(--sp-5)' }}>
-          <Link
-            href="/claim"
-            className="btn btn-success btn-lg btn-block"
-            style={{ textAlign: 'center', justifyContent: 'center', padding: '20px', fontSize: '1.15rem' }}
-          >
-            ✨ 산수 풀고 이번 주 이자 받기 →
-          </Link>
-        </div>
-      )}
+      <section className="card stack-3" style={{ marginBottom: 'var(--sp-5)' }}>
+        <h2 className="h3" style={{ margin: 0 }}>🎯 다음 할 일</h2>
+        <NextActivity canClaimNow={canClaimNow} week={week} lastClaimed={lastClaimed} />
+      </section>
+
 
       <section className="card" style={{ marginBottom: 'var(--sp-5)', padding: 'var(--sp-5)' }}>
         <div className="row-between" style={{ marginBottom: 'var(--sp-4)' }}>
           <h2 className="h3" style={{ margin: 0 }}>💰 내 통장</h2>
-          <span className="soft">{week === 0 ? '시작 전' : `${week}주차`}</span>
+          {week > 0 && <span className="soft">{week}주차</span>}
         </div>
 
         <div
@@ -97,9 +92,41 @@ export default async function KidDashboardPage() {
         </div>
       </section>
 
+      <section className="card stack-4" style={{ marginBottom: 'var(--sp-5)' }}>
+        <h2 className="h3" style={{ margin: 0 }}>📐 내 저금 계획</h2>
+        <div
+          className="grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 'var(--sp-2) var(--sp-3)',
+            fontSize: '0.92rem',
+          }}
+        >
+          <div className="muted">시작 원금</div>
+          <div style={{ fontWeight: 600 }}>{fmt(Number(account.starting_capital))}</div>
+          <div className="muted">저금 방식</div>
+          <div style={{ fontWeight: 600 }}>매주 산수 풀고 청구 (능동 복리)</div>
+          <div className="muted">주간 이자</div>
+          <div style={{ fontWeight: 600 }}>{Number(account.weekly_growth_rate_bp ?? 1000) / 100}% / 주</div>
+          <div className="muted">기간</div>
+          <div style={{ fontWeight: 600 }}>8주 (≈ 1년치 복리 경험)</div>
+        </div>
+        <p className="muted" style={{ margin: 0, fontSize: '0.88rem' }}>
+          매주 빠짐없이 청구했을 때의 예상 곡선이에요. 현재 위치(●)가 곡선 위에 있으면 잘 따라가고 있는 거예요.
+        </p>
+        <ProjectionChart
+          startingPrincipal={Number(account.starting_capital)}
+          weeklyRateBp={Number(account.weekly_growth_rate_bp ?? 1000)}
+          totalWeeks={8}
+          currentWeek={week}
+          currentBalance={total}
+        />
+      </section>
+
       <section style={{ marginBottom: 'var(--sp-5)' }}>
         <Link href="/history" className="btn btn-subtle btn-block" style={{ justifyContent: 'center' }}>
-          📊 내 통장 자라는 곡선 보기
+          📊 자세한 히스토리 보기
         </Link>
       </section>
 
@@ -111,5 +138,99 @@ export default async function KidDashboardPage() {
         </ul>
       </GuideCard>
     </main>
+  );
+}
+
+function NextActivity({
+  canClaimNow,
+  week,
+  lastClaimed,
+}: {
+  canClaimNow: boolean;
+  week: number;
+  lastClaimed: number | null;
+}) {
+  if (canClaimNow) {
+    return (
+      <div className="stack-3">
+        <Link
+          href="/claim"
+          className="btn btn-success btn-lg btn-block"
+          style={{ textAlign: 'center', justifyContent: 'center', padding: '20px', fontSize: '1.1rem' }}
+        >
+          ① ✨ 산수 풀고 이번 주 이자 받기 →
+        </Link>
+        <div
+          className="muted"
+          style={{
+            textAlign: 'center',
+            fontSize: '0.92rem',
+            padding: 'var(--sp-2)',
+            background: 'var(--surface-2)',
+            borderRadius: 'var(--r-sm)',
+          }}
+        >
+          ② ⏳ 기다리기 — 단, 이번 주 안에 풀어야 이자가 들어가요.
+        </div>
+      </div>
+    );
+  }
+  if (week === 0) {
+    return (
+      <div className="stack-3">
+        <div
+          style={{
+            padding: 'var(--sp-4)',
+            background: 'var(--surface-2)',
+            borderRadius: 'var(--r-sm)',
+            opacity: 0.6,
+            textAlign: 'center',
+          }}
+        >
+          ① 산수 풀기 — 다음 월요일 첫 주 시작 후 가능
+        </div>
+        <div
+          style={{
+            padding: 'var(--sp-4)',
+            background: 'var(--experiment-bg)',
+            borderRadius: 'var(--r-sm)',
+            border: '1px solid var(--experiment)',
+            textAlign: 'center',
+            color: 'var(--experiment-deep)',
+            fontWeight: 600,
+          }}
+        >
+          ② ⏳ 그때까지 기다리기
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="stack-3">
+      <div
+        style={{
+          padding: 'var(--sp-4)',
+          background: 'var(--surface-2)',
+          borderRadius: 'var(--r-sm)',
+          opacity: 0.6,
+          textAlign: 'center',
+        }}
+      >
+        ① 산수 풀기 — ✅ {lastClaimed}주차 청구 완료
+      </div>
+      <div
+        style={{
+          padding: 'var(--sp-4)',
+          background: 'var(--experiment-bg)',
+          borderRadius: 'var(--r-sm)',
+          border: '1px solid var(--experiment)',
+          textAlign: 'center',
+          color: 'var(--experiment-deep)',
+          fontWeight: 600,
+        }}
+      >
+        ② ⏳ 다음 일요일까지 기다리기
+      </div>
+    </div>
   );
 }

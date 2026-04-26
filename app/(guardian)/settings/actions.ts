@@ -148,13 +148,14 @@ export async function timeWarp(formData: FormData): Promise<void> {
   } else if (action === 'rewind_week') {
     newEpoch = new Date(new Date(epoch).getTime() + 7 * 24 * 60 * 60 * 1000);
   } else {
-    // reset_today: epoch = next Monday 00:00 KST from NOW
+    // reset_today: epoch = next Sunday 00:00 KST from NOW
     const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-    const daysUntilMonday = (8 - kstNow.getUTCDay()) % 7 || 7;
-    const monday = new Date(kstNow);
-    monday.setUTCHours(0, 0, 0, 0);
-    monday.setUTCDate(monday.getUTCDate() + daysUntilMonday);
-    newEpoch = new Date(monday.getTime() - 9 * 60 * 60 * 1000);
+    const dow = kstNow.getUTCDay(); // 0=Sun..6=Sat
+    const daysUntilSunday = ((6 - dow) % 7) + 1;
+    const sunday = new Date(kstNow);
+    sunday.setUTCHours(0, 0, 0, 0);
+    sunday.setUTCDate(sunday.getUTCDate() + daysUntilSunday);
+    newEpoch = new Date(sunday.getTime() - 9 * 60 * 60 * 1000);
   }
 
   const { error } = await admin

@@ -9,23 +9,80 @@ export const dynamic = 'force-dynamic';
 
 function fmt(n: number) { return n.toLocaleString('ko-KR') + '원'; }
 
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const y = kst.getUTCFullYear();
+  const m = String(kst.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(kst.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+type TxRow = {
+  id: string;
+  transaction_type: string;
+  zone: string;
+  amount: number;
+  week_num: number | null;
+  created_at: string;
+};
+
+type TxView = {
+  id: string;
+  date: string;
+  icon: string;
+  label: string;
+  amount: number;
+  weekNum: number | null;
+};
+
+function classifyTx(t: TxRow): TxView | null {
+  const amount = Number(t.amount);
+  switch (t.transaction_type) {
+    case 'initial_deposit':
+      return { id: t.id, date: fmtDate(t.created_at), icon: '🌱', label: '저금 시작', amount, weekNum: t.week_num };
+    case 'manual_adjustment':
+      return { id: t.id, date: fmtDate(t.created_at), icon: '📥', label: '저금 입금', amount, weekNum: t.week_num };
+    case 'interest_accrued':
+      if (amount === 0) return null;
+      return { id: t.id, date: fmtDate(t.created_at), icon: '📈', label: `${t.week_num}주차 이자`, amount, weekNum: t.week_num };
+    case 'bonus_match':
+      return { id: t.id, date: fmtDate(t.created_at), icon: '💧', label: '보너스 (이전 모델)', amount, weekNum: t.week_num };
+    default:
+      return null;
+  }
+}
+
 export default async function KidHistoryPage() {
   const ctx = await getMyKidAccount();
   if (!ctx) redirect('/login');
 
   const supabase = await getSupabaseServerClient();
-  const { data: snapshots } = await supabase
-    .from('weekly_snapshots')
-    .select('*')
-    .eq('account_id', String(ctx.account.id))
-    .eq('cycle_number', Number(ctx.account.cycle_number))
-    .order('week_num', { ascending: true });
+  const accountId = String(ctx.account.id);
+
+  const [{ data: snapshots }, { data: txs }] = await Promise.all([
+    supabase
+      .from('weekly_snapshots')
+      .select('*')
+      .eq('account_id', accountId)
+      .eq('cycle_number', Number(ctx.account.cycle_number))
+      .order('week_num', { ascending: true }),
+    supabase
+      .from('transactions')
+      .select('id, transaction_type, zone, amount, week_num, created_at')
+      .eq('account_id', accountId)
+      .order('created_at', { ascending: false }),
+  ]);
 
   const rows = (snapshots ?? []) as WeeklySnapshotRow[];
   const series = buildHistorySeries({
     snapshots: rows,
     weeklyGrowthRateBp: Number(ctx.account.weekly_growth_rate_bp ?? 1000),
   });
+
+  const txViews = ((txs ?? []) as TxRow[])
+    .map(classifyTx)
+    .filter((v): v is TxView => v !== null);
 
   return (
     <main className="page">
@@ -38,6 +95,44 @@ export default async function KidHistoryPage() {
 
       <div className="card" style={{ marginBottom: 'var(--sp-5)' }}>
         <GrowthChart points={series} />
+      </div>
+
+      <h2 className="h2" style={{ marginBottom: 'var(--sp-3)' }}>📋 들어온 돈 히스토리</h2>
+      <p className="muted" style={{ marginBottom: 'var(--sp-3)', fontSize: '0.9rem' }}>
+        원금 (저금)과 이자가 언제, 얼마씩 들어왔는지 보여줘요. 최근부터.
+      </p>
+      <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 'var(--sp-5)' }}>
+        {txViews.length === 0 ? (
+          <div style={{ padding: 'var(--sp-5)', textAlign: 'center' }} className="muted">
+            아직 들어온 돈이 없어요.
+          </div>
+        ) : (
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+            {txViews.map((t) => (
+              <li
+                key={t.id}
+                className="row gap-3"
+                style={{
+                  padding: 'var(--sp-3) var(--sp-4)',
+                  borderBottom: '1px solid var(--border)',
+                  alignItems: 'center',
+                }}
+              >
+                <span style={{ fontSize: '1.4rem' }}>{t.icon}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600 }}>{t.label}</div>
+                  <div className="soft" style={{ fontSize: '0.82rem' }}>{t.date}</div>
+                </div>
+                <span
+                  className="amount"
+                  style={{ color: 'var(--experiment-deep)', fontWeight: 700 }}
+                >
+                  +{fmt(t.amount)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <h2 className="h2" style={{ marginBottom: 'var(--sp-3)' }}>주차별 자세히</h2>
