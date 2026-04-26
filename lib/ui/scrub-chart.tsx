@@ -512,8 +512,8 @@ export function ScrubChart({
         </div>
       </div>
 
-      {/* Live stats — 3 cards in one-time scenario, 2 in regular */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--sp-3)' }}>
+      {/* Live stats — three cards in a single row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 'var(--sp-2)' }}>
         <ScenarioCard
           icon="🐷"
           tint="pink"
@@ -781,14 +781,16 @@ function ScenarioCard({
         borderWidth: highlight ? 2 : 1,
         boxShadow: highlight ? '0 8px 24px rgba(22,163,74,0.18)' : undefined,
         position: 'relative',
+        padding: 'var(--sp-3)',
+        minWidth: 0,
       }}
     >
-      <div className="row-between" style={{ marginBottom: 6 }}>
-        <span className="label" style={{ color: s.text }}>{label}</span>
-        <span style={{ fontSize: '1.25rem' }}>{icon}</span>
+      <div className="row-between" style={{ marginBottom: 4, gap: 4 }}>
+        <span className="label" style={{ color: s.text, fontSize: '0.78rem' }}>{label}</span>
+        <span style={{ fontSize: '1.05rem' }}>{icon}</span>
       </div>
-      <div className="amount" style={{ fontSize: '1.4rem', color: s.text }}>{fmtFull(amount)}</div>
-      <div className="soft" style={{ marginTop: 4, fontSize: '0.78rem' }}>{subtitle}</div>
+      <div className="amount" style={{ fontSize: '1.05rem', color: s.text, lineHeight: 1.2 }}>{fmtFull(amount)}</div>
+      <div className="soft" style={{ marginTop: 4, fontSize: '0.7rem' }}>{subtitle}</div>
       {highlight && (
         <div
           style={{
