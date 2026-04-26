@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
+import { fmtKRWShort, fmtFullKRW } from './format';
 
 const VIEWBOX_W = 720;
 const VIEWBOX_H = 380;
@@ -23,25 +24,18 @@ function compoundActiveAt(start: number, addition: number, rateBp: number, t: nu
   }
   return b;
 }
-function fmtKRW(n: number): string {
-  if (n >= 100_000_000) return Math.round(n / 10_000_000) / 10 + '억';
-  if (n >= 1_000_000) return Math.round(n / 100_000) / 10 + 'M';
-  if (n >= 10_000) return Math.round(n / 1000).toLocaleString('ko-KR') + 'k';
-  return n.toLocaleString('ko-KR');
-}
-function fmtFull(n: number): string {
-  return n.toLocaleString('ko-KR') + '원';
-}
+const fmtKRW = fmtKRWShort;
+const fmtFull = fmtFullKRW;
 
 type Mode = 'years' | 'weeks';
 type Milestone = { from: number; to: number; emoji: string; title: string; sub: string };
 const MILESTONES: Milestone[] = [
-  { from: 1, to: 4, emoji: '🐷', title: '아직 비슷해 보이지?', sub: '슬라이더를 더 끌어봐. 곡선이 갈라지기 시작해.' },
-  { from: 5, to: 9, emoji: '🌿', title: '복리가 돼지저금통을 추월', sub: '이자에 이자가 붙어서 점점 위로!' },
-  { from: 10, to: 14, emoji: '🌳', title: '꾸준히 저금하는 게 진짜 무기', sub: '능동(꾸준히)이 수동(가만히)보다 훨씬 위로 올라가.' },
-  { from: 15, to: 24, emoji: '🚀', title: '셋의 격차가 또렷해!', sub: '돼지저금통은 직선, 복리는 곡선, 능동은 더 가파른 곡선.' },
-  { from: 25, to: 34, emoji: '⚡', title: '능동이 폭발하기 시작', sub: '꾸준한 작은 저축 + 이자가 시간을 만나면 어마어마해.' },
-  { from: 35, to: 50, emoji: '🌌', title: '시간 + 꾸준함 = 마법', sub: '일찍, 꾸준히, 오래. 이게 부의 가장 단순한 공식이야.' },
+  { from: 0, to: 1, emoji: '🐷', title: '아직 비슷해 보이지?', sub: '슬라이더를 더 끌어봐. 곡선이 갈라지기 시작해.' },
+  { from: 2, to: 4, emoji: '🌿', title: '복리가 돼지저금통을 추월', sub: '이자에 이자가 붙어서 점점 위로!' },
+  { from: 5, to: 8, emoji: '🌳', title: '꾸준히 저금하는 게 진짜 무기', sub: '능동(꾸준히)이 수동(가만히)보다 훨씬 위로 올라가.' },
+  { from: 9, to: 12, emoji: '🚀', title: '셋의 격차가 또렷해!', sub: '돼지저금통은 직선, 복리는 곡선, 능동은 더 가파른 곡선.' },
+  { from: 13, to: 16, emoji: '⚡', title: '능동이 폭발하기 시작', sub: '꾸준한 작은 저축 + 이자가 시간을 만나면 어마어마해.' },
+  { from: 17, to: 20, emoji: '🌌', title: '시간 + 꾸준함 = 마법', sub: '일찍, 꾸준히, 오래. 이게 부의 가장 단순한 공식이야.' },
 ];
 
 function getMilestone(t: number): Milestone {
@@ -51,7 +45,7 @@ function getMilestone(t: number): Milestone {
 const PRESET_PRINCIPALS = [10_000, 50_000, 100_000, 1_000_000];
 const PRESET_RATES = [5, 7, 10, 15, 20];
 const PRESET_ADDITIONS = [0, 500, 1_000, 5_000, 10_000];
-const PRESET_RANGES = [8, 20, 50, 100];
+const PRESET_RANGES = [1, 5, 10, 20];
 
 function getXTicks(max: number): number[] {
   return Array.from({ length: 6 }, (_, i) => Math.round((max * i) / 5));
@@ -59,7 +53,7 @@ function getXTicks(max: number): number[] {
 
 export function ScrubChart() {
   const [tick, setTick] = useState(8);
-  const [maxTicks, setMaxTicks] = useState(50);
+  const [maxTicks, setMaxTicks] = useState(20);
   const [mode, setMode] = useState<Mode>('years');
   const [principal, setPrincipal] = useState(10_000);
   const [ratePct, setRatePct] = useState(10);

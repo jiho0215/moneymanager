@@ -3,6 +3,8 @@
  * Scales with container width via viewBox + preserveAspectRatio.
  */
 
+import { fmtKRWShort } from './format';
+
 export type ChartPoint = {
   x: number;
   actual: number;
@@ -17,11 +19,7 @@ export type GrowthChartProps = {
 };
 
 const VIEWBOX_W = 640;
-
-function fmtKRW(n: number): string {
-  if (n >= 10000) return Math.round(n / 1000) + 'k';
-  return n.toString();
-}
+const fmtKRW = fmtKRWShort;
 
 export function GrowthChart({ points, height = 320 }: GrowthChartProps) {
   if (points.length === 0) {
