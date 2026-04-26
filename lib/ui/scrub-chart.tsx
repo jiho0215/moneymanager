@@ -5,16 +5,24 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 
 const MAX_TICKS = 50;
 const VIEWBOX_W = 720;
-const VIEWBOX_H = 360;
+const VIEWBOX_H = 380;
 const MARGIN = { top: 30, right: 30, bottom: 50, left: 64 };
 
-function compoundAt(start: number, rateBp: number, ticks: number): number {
+function piggyAt(start: number, addition: number, t: number): number {
+  return start + addition * t;
+}
+function compoundPassiveAt(start: number, rateBp: number, t: number): number {
   let b = start;
-  for (let i = 0; i < ticks; i += 1) b = b + Math.floor((b * rateBp) / 10000);
+  for (let i = 0; i < t; i += 1) b = b + Math.floor((b * rateBp) / 10000);
   return b;
 }
-function simpleAt(start: number, rateBp: number, ticks: number): number {
-  return start + Math.floor(((start * rateBp) / 10000) * ticks);
+function compoundActiveAt(start: number, addition: number, rateBp: number, t: number): number {
+  let b = start;
+  for (let i = 0; i < t; i += 1) {
+    b = b + addition;
+    b = b + Math.floor((b * rateBp) / 10000);
+  }
+  return b;
 }
 function fmtKRW(n: number): string {
   if (n >= 100_000_000) return Math.round(n / 10_000_000) / 10 + '억';
@@ -29,12 +37,12 @@ function fmtFull(n: number): string {
 type Mode = 'years' | 'weeks';
 type Milestone = { from: number; to: number; emoji: string; title: string; sub: string };
 const MILESTONES: Milestone[] = [
-  { from: 1, to: 4, emoji: '🌱', title: '거의 같아 보이지?', sub: '슬라이더를 더 오른쪽으로 끌어봐.' },
-  { from: 5, to: 9, emoji: '🌿', title: '조금씩 차이가 보여', sub: '복리가 살짝 위로 나가기 시작했어.' },
-  { from: 10, to: 14, emoji: '🌳', title: '와, 격차가 또렷해!', sub: '복리는 이자에도 이자가 붙어서 가팔라져.' },
-  { from: 15, to: 24, emoji: '🚀', title: '복리가 단리를 추월하고 있어', sub: '단리는 매번 같은 양만, 복리는 점점 더!' },
-  { from: 25, to: 34, emoji: '⚡', title: '복리가 폭발하기 시작!', sub: '시간이 충분하면 단리는 따라올 수 없어.' },
-  { from: 35, to: 50, emoji: '🌌', title: '하늘로 올라가는 복리', sub: '시간이 가장 강력한 친구야. 일찍 시작할수록 좋아.' },
+  { from: 1, to: 4, emoji: '🐷', title: '아직 비슷해 보이지?', sub: '슬라이더를 더 끌어봐. 곡선이 갈라지기 시작해.' },
+  { from: 5, to: 9, emoji: '🌿', title: '복리가 돼지저금통을 추월', sub: '이자에 이자가 붙어서 점점 위로!' },
+  { from: 10, to: 14, emoji: '🌳', title: '꾸준히 저금하는 게 진짜 무기', sub: '능동(꾸준히)이 수동(가만히)보다 훨씬 위로 올라가.' },
+  { from: 15, to: 24, emoji: '🚀', title: '셋의 격차가 또렷해!', sub: '돼지저금통은 직선, 복리는 곡선, 능동은 더 가파른 곡선.' },
+  { from: 25, to: 34, emoji: '⚡', title: '능동이 폭발하기 시작', sub: '꾸준한 작은 저축 + 이자가 시간을 만나면 어마어마해.' },
+  { from: 35, to: 50, emoji: '🌌', title: '시간 + 꾸준함 = 마법', sub: '일찍, 꾸준히, 오래. 이게 부의 가장 단순한 공식이야.' },
 ];
 
 function getMilestone(t: number): Milestone {
@@ -43,18 +51,19 @@ function getMilestone(t: number): Milestone {
 
 const PRESET_PRINCIPALS = [10_000, 50_000, 100_000, 1_000_000];
 const PRESET_RATES = [5, 7, 10, 15, 20];
+const PRESET_ADDITIONS = [0, 500, 1_000, 5_000, 10_000];
 
 export function ScrubChart() {
   const [tick, setTick] = useState(8);
   const [mode, setMode] = useState<Mode>('years');
   const [principal, setPrincipal] = useState(10_000);
   const [ratePct, setRatePct] = useState(10);
+  const [addition, setAddition] = useState(1_000);
   const [dragging, setDragging] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const rateBp = ratePct * 100;
 
   const unit = mode === 'years' ? '년' : '주';
-  const unitLong = mode === 'years' ? '년' : '주';
 
   function pickFromPointer(e: ReactPointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
@@ -83,14 +92,19 @@ export function ScrubChart() {
   }
 
   const series = useMemo(() => {
-    const arr: { tick: number; simple: number; compound: number }[] = [];
+    const arr: { t: number; piggy: number; passive: number; active: number }[] = [];
     for (let t = 0; t <= MAX_TICKS; t += 1) {
-      arr.push({ tick: t, simple: simpleAt(principal, rateBp, t), compound: compoundAt(principal, rateBp, t) });
+      arr.push({
+        t,
+        piggy: piggyAt(principal, addition, t),
+        passive: compoundPassiveAt(principal, rateBp, t),
+        active: compoundActiveAt(principal, addition, rateBp, t),
+      });
     }
     return arr;
-  }, [principal, rateBp]);
+  }, [principal, rateBp, addition]);
 
-  const yMax = Math.max(series[series.length - 1]!.compound, principal * 2);
+  const yMax = Math.max(series[series.length - 1]!.active, principal * 2);
   const yMin = principal;
 
   const innerW = VIEWBOX_W - MARGIN.left - MARGIN.right;
@@ -100,27 +114,14 @@ export function ScrubChart() {
   const yScale = (val: number) =>
     MARGIN.top + innerH - ((val - yMin) / Math.max(1, yMax - yMin)) * innerH;
 
-  const compoundPath = series
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.tick)} ${yScale(p.compound)}`)
-    .join(' ');
-  const simplePath = series
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.tick)} ${yScale(p.simple)}`)
-    .join(' ');
-
-  const visibleSeries = series.filter((p) => p.tick <= tick);
-  const gapPath =
-    `M ${xScale(0)} ${yScale(simpleAt(principal, rateBp, 0))} ` +
-    visibleSeries.map((p) => `L ${xScale(p.tick)} ${yScale(p.simple)}`).join(' ') +
-    ' ' +
-    [...visibleSeries].reverse().map((p) => `L ${xScale(p.tick)} ${yScale(p.compound)}`).join(' ') +
-    ' Z';
+  const piggyPath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.piggy)}`).join(' ');
+  const passivePath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.passive)}`).join(' ');
+  const activePath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.active)}`).join(' ');
 
   const xTicks = [0, 10, 20, 30, 40, 50];
   const yTicks = [yMin, yMin + (yMax - yMin) * 0.25, yMin + (yMax - yMin) * 0.5, yMin + (yMax - yMin) * 0.75, yMax];
 
   const cur = series[tick]!;
-  const diff = cur.compound - cur.simple;
-  const diffPct = cur.simple > 0 ? Math.round(((cur.compound - cur.simple) / cur.simple) * 100) : 0;
   const milestone = getMilestone(tick);
 
   return (
@@ -169,72 +170,34 @@ export function ScrubChart() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
-          <div>
-            <div className="label" style={{ marginBottom: 6 }}>💰 원금</div>
-            <div className="amount" style={{ fontSize: '1.25rem', color: 'var(--text)' }}>
-              {fmtFull(principal)}
-            </div>
-            <div className="row gap-1" style={{ marginTop: 8, flexWrap: 'wrap' }}>
-              {PRESET_PRINCIPALS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setPrincipal(p)}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    border: 'none',
-                    background: principal === p ? 'var(--experiment)' : 'var(--surface-2)',
-                    color: principal === p ? 'white' : 'var(--text-muted)',
-                    borderRadius: 'var(--r-pill)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {fmtKRW(p)}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--sp-3)' }}>
+          <ControlField label="💰 시작 원금" value={fmtFull(principal)} valueColor="var(--text)">
+            {PRESET_PRINCIPALS.map((p) => (
+              <Chip key={p} active={principal === p} onClick={() => setPrincipal(p)}>{fmtKRW(p)}</Chip>
+            ))}
+          </ControlField>
 
-          <div>
-            <div className="label" style={{ marginBottom: 6 }}>📈 이자율 (매 {unit})</div>
-            <div className="amount" style={{ fontSize: '1.25rem', color: 'var(--experiment-deep)' }}>
-              {ratePct}%
-            </div>
-            <div className="row gap-1" style={{ marginTop: 8, flexWrap: 'wrap' }}>
-              {PRESET_RATES.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRatePct(r)}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    border: 'none',
-                    background: ratePct === r ? 'var(--experiment)' : 'var(--surface-2)',
-                    color: ratePct === r ? 'white' : 'var(--text-muted)',
-                    borderRadius: 'var(--r-pill)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {r}%
-                </button>
-              ))}
-            </div>
-          </div>
+          <ControlField label={`📈 이자율 (매 ${unit})`} value={`${ratePct}%`} valueColor="var(--experiment-deep)">
+            {PRESET_RATES.map((r) => (
+              <Chip key={r} active={ratePct === r} onClick={() => setRatePct(r)}>{r}%</Chip>
+            ))}
+          </ControlField>
+
+          <ControlField label={`💵 매 ${unit} 추가 저금`} value={fmtFull(addition)} valueColor="#ec4899">
+            {PRESET_ADDITIONS.map((a) => (
+              <Chip key={a} active={addition === a} onClick={() => setAddition(a)}>{a === 0 ? '0' : fmtKRW(a)}</Chip>
+            ))}
+          </ControlField>
         </div>
 
         <p className="soft" style={{ margin: 0, fontSize: '0.82rem' }}>
           {mode === 'years'
-            ? '🔔 실제 투자 시장은 보통 1년에 5-10% 정도예요.'
+            ? '🔔 실제 투자 시장은 보통 1년에 5-10%, 매년 조금씩 꾸준히 저축하는 게 핵심.'
             : '🔔 우리 가족 시스템은 1주에 10% — 1주가 1년인 셈! 8주 = 8년 압축.'}
         </p>
       </div>
 
-      {/* Chart + Slider unified */}
+      {/* Chart */}
       <div
         style={{
           background: 'var(--surface)',
@@ -245,8 +208,9 @@ export function ScrubChart() {
       >
         <div className="row-between" style={{ marginBottom: 'var(--sp-3)', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
           <strong>⏱ 시간을 끌어봐</strong>
-          <span className="badge badge-info">{tick}{unitLong} 후</span>
+          <span className="badge badge-info">{tick}{unit} 후</span>
         </div>
+
         <svg
           ref={svgRef}
           width="100%"
@@ -320,10 +284,12 @@ export function ScrubChart() {
             </g>
           ))}
 
-          <path d={gapPath} fill="rgba(22,163,74,0.18)" />
-          <path d={simplePath} fill="none" stroke="#94a3b8" strokeWidth={2.5} />
-          <path d={compoundPath} fill="none" stroke="#16a34a" strokeWidth={3} />
+          {/* Three lines, in z-order: piggy (bottom), passive (mid), active (top/winner) */}
+          <path d={piggyPath} fill="none" stroke="#ec4899" strokeWidth={2.5} strokeDasharray="2 4" />
+          <path d={passivePath} fill="none" stroke="#86efac" strokeWidth={2.5} strokeDasharray="6 4" />
+          <path d={activePath} fill="none" stroke="#16a34a" strokeWidth={3.5} />
 
+          {/* Vertical indicator */}
           <line
             x1={xScale(tick)}
             x2={xScale(tick)}
@@ -334,16 +300,20 @@ export function ScrubChart() {
             strokeDasharray="4 4"
           />
 
-          <circle cx={xScale(tick)} cy={yScale(cur.simple)} r={6} fill="#94a3b8" stroke="white" strokeWidth={2} />
-          <circle cx={xScale(tick)} cy={yScale(cur.compound)} r={7} fill="#16a34a" stroke="white" strokeWidth={2} />
+          {/* Dots at current tick for each scenario */}
+          <circle cx={xScale(tick)} cy={yScale(cur.piggy)} r={5} fill="#ec4899" stroke="white" strokeWidth={2} />
+          <circle cx={xScale(tick)} cy={yScale(cur.passive)} r={5} fill="#86efac" stroke="white" strokeWidth={2} />
+          <circle cx={xScale(tick)} cy={yScale(cur.active)} r={7} fill="#16a34a" stroke="white" strokeWidth={2.5} />
 
+          {/* Tick badge */}
           <g transform={`translate(${xScale(tick)}, ${MARGIN.top - 10})`}>
             <rect x={-30} y={-13} width={60} height={22} rx={11} fill="#2563eb" />
             <text x={0} y={4} fontSize={12} fontWeight={700} fill="white" textAnchor="middle">
               {tick}{unit} 후
             </text>
           </g>
-          {/* Drag handle at bottom of indicator (clearly grabbable) */}
+
+          {/* Drag handle at bottom of indicator */}
           <g transform={`translate(${xScale(tick)}, ${MARGIN.top + innerH})`} style={{ pointerEvents: 'none' }}>
             <circle r={11} fill="#2563eb" stroke="white" strokeWidth={3} style={{ filter: 'drop-shadow(0 2px 4px rgba(37,99,235,0.4))' }} />
             <path d="M -3 -2 L 3 -2 M -3 2 L 3 2" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
@@ -354,42 +324,69 @@ export function ScrubChart() {
           👆 차트를 끌어서 시간을 바꿔봐 (또는 좌우 화살표 키)
         </p>
 
-        <div className="row gap-4" style={{ flexWrap: 'wrap', justifyContent: 'center', marginTop: 'var(--sp-3)', fontSize: '0.9rem' }}>
+        <div className="row gap-4" style={{ flexWrap: 'wrap', justifyContent: 'center', marginTop: 'var(--sp-3)', fontSize: '0.85rem' }}>
           <span className="row gap-2" style={{ alignItems: 'center' }}>
-            <span style={{ display: 'inline-block', width: 24, borderTop: '3px solid #94a3b8' }} />
-            <strong>단리</strong>
-            <span className="muted">매{unit} 같은 이자만</span>
+            <span style={{ display: 'inline-block', width: 22, borderTop: '3px dotted #ec4899' }} />
+            <span><strong>🐷 돼지저금통</strong> <span className="muted">이자 없이 모음</span></span>
           </span>
           <span className="row gap-2" style={{ alignItems: 'center' }}>
-            <span style={{ display: 'inline-block', width: 24, borderTop: '3px solid #16a34a' }} />
-            <strong>복리</strong>
-            <span className="muted">이자에 이자가 붙음</span>
+            <span style={{ display: 'inline-block', width: 22, borderTop: '3px dashed #86efac' }} />
+            <span><strong>🌿 복리 (가만히)</strong> <span className="muted">한 번 넣고 안 만짐</span></span>
           </span>
           <span className="row gap-2" style={{ alignItems: 'center' }}>
-            <span style={{ display: 'inline-block', width: 18, height: 8, background: 'rgba(22,163,74,0.3)', borderRadius: 2 }} />
-            <strong>복리의 보너스</strong>
+            <span style={{ display: 'inline-block', width: 22, borderTop: '4px solid #16a34a' }} />
+            <span><strong>🌳 복리 (꾸준히)</strong> <span className="muted">매번 추가 + 이자</span></span>
           </span>
         </div>
       </div>
 
+      {/* Live stats — 3 cards */}
       <div className="grid-3">
-        <div className="card" style={{ background: 'var(--surface-2)', borderColor: '#94a3b8' }}>
-          <div className="label" style={{ color: '#475569' }}>단리</div>
-          <div className="amount" style={{ fontSize: '1.6rem', color: '#475569' }}>{fmtFull(cur.simple)}</div>
-          <div className="soft" style={{ marginTop: 4 }}>매{unit} +{fmtKRW(Math.floor((principal * rateBp) / 10000))}원만</div>
-        </div>
-        <div className="card card-tinted-experiment">
-          <div className="label" style={{ color: 'var(--experiment-deep)' }}>복리</div>
-          <div className="amount" style={{ fontSize: '1.6rem', color: 'var(--experiment-deep)' }}>{fmtFull(cur.compound)}</div>
-          <div className="soft" style={{ marginTop: 4 }}>{ratePct}%씩 누적</div>
-        </div>
-        <div className="card" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', borderColor: '#f59e0b' }}>
-          <div className="label" style={{ color: '#92400e' }}>차이</div>
-          <div className="amount" style={{ fontSize: '1.6rem', color: '#92400e' }}>+{fmtFull(diff)}</div>
-          <div className="soft" style={{ marginTop: 4 }}>단리보다 {diffPct}% 더</div>
-        </div>
+        <ScenarioCard
+          icon="🐷"
+          tint="pink"
+          label="돼지저금통"
+          subtitle={addition === 0 ? '아무것도 안 함' : `매${unit} +${fmtKRW(addition)}원만`}
+          amount={cur.piggy}
+        />
+        <ScenarioCard
+          icon="🌿"
+          tint="passive"
+          label="복리 (가만히)"
+          subtitle={`${ratePct}%씩 누적`}
+          amount={cur.passive}
+        />
+        <ScenarioCard
+          icon="🌳"
+          tint="active"
+          label="복리 (꾸준히)"
+          subtitle={addition === 0 ? `${ratePct}%만 (추가 없음)` : `매${unit} +${fmtKRW(addition)} & ${ratePct}%`}
+          amount={cur.active}
+          highlight
+        />
       </div>
 
+      {/* Multiplier vs piggy */}
+      {cur.piggy > 0 && cur.active > cur.piggy && (
+        <div
+          className="card"
+          style={{
+            background: 'linear-gradient(135deg, #fef3c7 0%, #ecfdf5 100%)',
+            borderColor: 'var(--experiment)',
+            textAlign: 'center',
+          }}
+        >
+          <div className="soft" style={{ marginBottom: 4 }}>꾸준한 복리 vs 돼지저금통</div>
+          <div className="amount" style={{ fontSize: '1.5rem', color: 'var(--experiment-deep)' }}>
+            <strong>{(cur.active / cur.piggy).toFixed(2)}배</strong> 차이!
+          </div>
+          <div className="soft" style={{ marginTop: 4 }}>
+            +{fmtFull(cur.active - cur.piggy)} 더
+          </div>
+        </div>
+      )}
+
+      {/* Milestone narrative */}
       <div
         key={milestone.title}
         className="card fade-in"
@@ -404,6 +401,107 @@ export function ScrubChart() {
         <div className="h2" style={{ marginBottom: 'var(--sp-2)' }}>{milestone.title}</div>
         <div className="muted" style={{ fontSize: '0.95rem' }}>{milestone.sub}</div>
       </div>
+    </div>
+  );
+}
+
+function ControlField({
+  label,
+  value,
+  valueColor,
+  children,
+}: {
+  label: string;
+  value: string;
+  valueColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="label" style={{ marginBottom: 6 }}>{label}</div>
+      <div className="amount" style={{ fontSize: '1.15rem', color: valueColor }}>{value}</div>
+      <div className="row gap-1" style={{ marginTop: 8, flexWrap: 'wrap' }}>{children}</div>
+    </div>
+  );
+}
+
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: '4px 10px',
+        fontSize: '0.78rem',
+        fontWeight: 600,
+        border: 'none',
+        background: active ? 'var(--experiment)' : 'var(--surface-2)',
+        color: active ? 'white' : 'var(--text-muted)',
+        borderRadius: 'var(--r-pill)',
+        cursor: 'pointer',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ScenarioCard({
+  icon,
+  tint,
+  label,
+  subtitle,
+  amount,
+  highlight,
+}: {
+  icon: string;
+  tint: 'pink' | 'passive' | 'active';
+  label: string;
+  subtitle: string;
+  amount: number;
+  highlight?: boolean;
+}) {
+  const styles = {
+    pink: { bg: '#fdf2f8', border: '#ec4899', text: '#9d174d' },
+    passive: { bg: '#f0fdf4', border: '#86efac', text: '#15803d' },
+    active: { bg: '#dcfce7', border: '#16a34a', text: 'var(--experiment-deep)' },
+  } as const;
+  const s = styles[tint];
+  return (
+    <div
+      className="card"
+      style={{
+        background: s.bg,
+        borderColor: s.border,
+        borderWidth: highlight ? 2 : 1,
+        boxShadow: highlight ? '0 8px 24px rgba(22,163,74,0.18)' : undefined,
+        position: 'relative',
+      }}
+    >
+      <div className="row-between" style={{ marginBottom: 6 }}>
+        <span className="label" style={{ color: s.text }}>{label}</span>
+        <span style={{ fontSize: '1.25rem' }}>{icon}</span>
+      </div>
+      <div className="amount" style={{ fontSize: '1.4rem', color: s.text }}>{fmtFull(amount)}</div>
+      <div className="soft" style={{ marginTop: 4, fontSize: '0.78rem' }}>{subtitle}</div>
+      {highlight && (
+        <div
+          style={{
+            position: 'absolute',
+            top: -10,
+            right: 12,
+            background: 'var(--experiment)',
+            color: 'white',
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            padding: '3px 10px',
+            borderRadius: 'var(--r-pill)',
+            letterSpacing: '0.04em',
+          }}
+        >
+          🏆 가장 큰
+        </div>
+      )}
     </div>
   );
 }
