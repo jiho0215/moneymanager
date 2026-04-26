@@ -205,7 +205,7 @@ export function ScrubChart() {
         </p>
       </div>
 
-      {/* Chart */}
+      {/* Chart + Slider unified */}
       <div
         style={{
           background: 'var(--surface)',
@@ -214,6 +214,10 @@ export function ScrubChart() {
           border: '1px solid var(--border)',
         }}
       >
+        <div className="row-between" style={{ marginBottom: 'var(--sp-3)', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
+          <strong>⏱ 시간을 끌어봐</strong>
+          <span className="badge badge-info">{tick}{unitLong} 후</span>
+        </div>
         <svg
           width="100%"
           height="auto"
@@ -284,6 +288,28 @@ export function ScrubChart() {
           </g>
         </svg>
 
+        {/* Slider — aligned with chart x-axis */}
+        <div
+          style={{
+            // Match the SVG's inner plot horizontal range so thumb tracks indicator
+            paddingLeft: `${(MARGIN.left / VIEWBOX_W) * 100}%`,
+            paddingRight: `${(MARGIN.right / VIEWBOX_W) * 100}%`,
+            marginTop: -8,
+          }}
+        >
+          <input
+            type="range"
+            min={0}
+            max={MAX_TICKS}
+            step={1}
+            value={tick}
+            onChange={(e) => setTick(Number(e.target.value))}
+            aria-label={`${unitLong} 수 선택`}
+            className="scrub-slider"
+            style={{ width: '100%', height: 36, background: 'transparent', cursor: 'pointer' }}
+          />
+        </div>
+
         <div className="row gap-4" style={{ flexWrap: 'wrap', justifyContent: 'center', marginTop: 'var(--sp-3)', fontSize: '0.9rem' }}>
           <span className="row gap-2" style={{ alignItems: 'center' }}>
             <span style={{ display: 'inline-block', width: 24, borderTop: '3px solid #94a3b8' }} />
@@ -299,32 +325,6 @@ export function ScrubChart() {
             <span style={{ display: 'inline-block', width: 18, height: 8, background: 'rgba(22,163,74,0.3)', borderRadius: 2 }} />
             <strong>복리의 보너스</strong>
           </span>
-        </div>
-      </div>
-
-      {/* Slider */}
-      <div className="card stack-3">
-        <div className="row-between">
-          <strong>⏱ 시간을 끌어봐</strong>
-          <span className="badge badge-info">{tick}{unitLong} 후</span>
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={MAX_TICKS}
-          step={1}
-          value={tick}
-          onChange={(e) => setTick(Number(e.target.value))}
-          aria-label={`${unitLong} 수 선택`}
-          style={{ width: '100%', height: 40, background: 'transparent', cursor: 'pointer' }}
-        />
-        <div className="row-between" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          <span>0{unit}</span>
-          <span>10{unit}</span>
-          <span>20{unit}</span>
-          <span>30{unit}</span>
-          <span>40{unit}</span>
-          <span>50{unit}</span>
         </div>
       </div>
 
