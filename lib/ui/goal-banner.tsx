@@ -43,27 +43,79 @@ export function GoalBanner({
 
   return (
     <section className="goal-banner fade-in">
-      <div className="label" style={{ marginBottom: 6 }}>{kidName}의 목표</div>
-      <h2 className="h2" style={{ margin: '0 0 var(--sp-4)' }}>
-        <span>🌱</span>
-        <span style={{ margin: '0 8px', color: 'var(--text-soft)' }}>→</span>
-        <span>🌳</span>
-        <span style={{ marginLeft: 12 }}>{totalWeeks}주 후</span>
-      </h2>
+      <div
+        className="label"
+        style={{ marginBottom: 'var(--sp-4)', textAlign: 'center' }}
+      >
+        {kidName}의 {totalWeeks}주 목표
+      </div>
 
-      <div className="row-between" style={{ marginBottom: 12, fontSize: '0.92rem', color: 'var(--text-muted)' }}>
-        <span>시작 <strong style={{ color: 'var(--text)' }}>{fmt(startingBalance)}</strong></span>
-        <span>{totalWeeks}주 후의 자산 <strong style={{ color: 'var(--experiment-deep)' }}>{fmt(goal)}</strong></span>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
+          gap: 'var(--sp-3)',
+          marginBottom: 'var(--sp-5)',
+        }}
+      >
+        <BeforeAfterCell emoji="🌱" amount={fmt(startingBalance)} label="시작" />
+        <span
+          aria-hidden
+          style={{ fontSize: '1.5rem', color: 'var(--text-soft)', lineHeight: 1 }}
+        >
+          →
+        </span>
+        <BeforeAfterCell
+          emoji="🌳"
+          amount={fmt(goal)}
+          label={`${totalWeeks}주 후`}
+          highlight
+        />
       </div>
 
       <div className="goal-progress-track">
         <div className="goal-progress-fill" style={{ width: `${progressPct}%` }} />
       </div>
-
-      <div style={{ marginTop: 6, fontSize: '0.82rem' }}>
-        <span className="soft">{weekDone}/{totalWeeks}주차</span>
+      <div
+        className="soft"
+        style={{ fontSize: '0.82rem', marginTop: 6, textAlign: 'center' }}
+      >
+        {weekDone}/{totalWeeks}주차
       </div>
     </section>
+  );
+}
+
+function BeforeAfterCell({
+  emoji,
+  amount,
+  label,
+  highlight = false,
+}: {
+  emoji: string;
+  amount: string;
+  label: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ fontSize: '2rem', lineHeight: 1, marginBottom: 6 }}>{emoji}</div>
+      <div
+        className="amount"
+        style={{
+          fontSize: '1.4rem',
+          fontWeight: 700,
+          color: highlight ? 'var(--experiment-deep)' : 'var(--text)',
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {amount}
+      </div>
+      <div className="soft" style={{ fontSize: '0.82rem', marginTop: 2 }}>
+        {label}
+      </div>
+    </div>
   );
 }
 
