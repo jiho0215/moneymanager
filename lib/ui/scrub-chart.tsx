@@ -51,7 +51,7 @@ const PRESET_PRINCIPALS = [10_000, 50_000, 100_000, 1_000_000];
 const PRESET_RATES_YEARS = [5, 7, 10, 15, 20]; // 실제 시장
 const PRESET_RATES_WEEKS = [3, 5, 7, 10, 13];  // 가상은행 (3-13%)
 const PRESET_ADDITIONS = [0, 500, 1_000, 5_000, 10_000];
-const PRESET_RANGES = [1, 5, 8, 10, 20];
+const PRESET_RANGES = [1, 5, 8, 20, 50, 100];
 
 function getXTicks(max: number): number[] {
   // For small ranges, show every tick. For larger ranges, space 6 evenly.
@@ -169,17 +169,22 @@ export function ScrubChart({
     return arr;
   }, [principal, rateBp, addition, maxTicks, scenario]);
 
-  // Doubling milestones: weeks where the compound line first crosses 2×, 4×, 8× principal.
-  // Only meaningful for one-time scenario; in 'regular' the principal grows so doublings shift.
+  // Doubling milestones: every 2^N multiple (2×, 4×, 8×, 16×, …) up to the max
+  // value reached on the compound line. Crosses are only meaningful for the
+  // one-time scenario; in 'regular' the principal grows so the curve isn't a
+  // pure exponential of the starting amount.
   const doublings = useMemo(() => {
     if (scenario !== 'one-time' || principal <= 0) return [];
-    const targets = [2, 4, 8];
     const result: Array<{ multiple: number; week: number; value: number }> = [];
-    for (const m of targets) {
+    let m = 2;
+    while (m <= 65536) {
       const target = principal * m;
       const idx = series.findIndex((p) => p.compound >= target);
       if (idx > 0 && idx <= maxTicks) {
         result.push({ multiple: m, week: series[idx]!.t, value: series[idx]!.compound });
+        m *= 2;
+      } else {
+        break;
       }
     }
     return result;
