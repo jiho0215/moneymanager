@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getGuardianFamilyView } from '@/lib/db/queries';
-import { updateSettings, depositToKid, chooseCycleEnd, timeWarp } from './actions';
+import { updateSettings, depositToKid, chooseCycleEnd, timeWarp, changeKidPin } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,7 @@ const WARP_LABEL: Record<string, string> = {
   reset_today: '🔄 오늘로 리셋',
 };
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ warped?: string; error?: string }> }) {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ warped?: string; error?: string; pin_changed?: string }> }) {
   const ctx = await getGuardianFamilyView();
   if (!ctx) redirect('/login');
   const sp = await searchParams;
@@ -31,6 +31,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <div className="alert alert-success fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
           <span style={{ fontSize: '1.2rem' }}>🕰</span>
           <div>{WARP_LABEL[sp.warped] ?? sp.warped} 적용됨. dashboard에서 새 잔액 확인 가능.</div>
+        </div>
+      )}
+      {sp.pin_changed && (
+        <div className="alert alert-success fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
+          <span style={{ fontSize: '1.2rem' }}>🔒</span>
+          <div>자녀 PIN이 변경되었어요. 다음 로그인부터 새 PIN으로 들어가야 해요.</div>
         </div>
       )}
 
@@ -62,6 +68,35 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <form id={`form-rule-${kid.id}`} action={updateSettings}>
                   <input type="hidden" name="accountId" value={account.id} />
                   <SubmitButton variant="primary" pendingText="저장 중...">저장</SubmitButton>
+                </form>
+              </fieldset>
+
+              <fieldset className="stack-3">
+                <legend>🔒 자녀 PIN 변경</legend>
+                <p className="soft" style={{ margin: 0 }}>
+                  자녀가 로그인할 때 쓰는 4자리 PIN을 바꿉니다. 변경 후 자녀에게 새 PIN을 알려주세요.
+                </p>
+                <form action={changeKidPin} className="row gap-2">
+                  <input type="hidden" name="kidMembershipId" value={kid.id} />
+                  <input
+                    type="text"
+                    name="newPin"
+                    placeholder="새 PIN (숫자 4자리)"
+                    inputMode="numeric"
+                    pattern="\d{4}"
+                    maxLength={4}
+                    minLength={4}
+                    required
+                    autoComplete="off"
+                    style={{
+                      flex: 1,
+                      fontFamily: 'monospace',
+                      letterSpacing: '0.4em',
+                      fontSize: '1.1rem',
+                      textAlign: 'center',
+                    }}
+                  />
+                  <SubmitButton variant="primary" pendingText="변경 중...">PIN 변경</SubmitButton>
                 </form>
               </fieldset>
 

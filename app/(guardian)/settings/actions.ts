@@ -3,7 +3,62 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/auth/admin';
+import { getSupabaseServerClient } from '@/lib/db/client';
 import { logger, generateRequestId } from '@/lib/observability/logger';
+
+export async function changeKidPin(formData: FormData): Promise<void> {
+  const reqId = generateRequestId();
+  const kidMembershipId = String(formData.get('kidMembershipId') ?? '');
+  const newPin = String(formData.get('newPin') ?? '').trim();
+
+  if (!kidMembershipId) redirect('/settings?error=' + encodeURIComponent('자녀를 찾을 수 없어요'));
+  if (!/^\d{4}$/.test(newPin)) {
+    redirect('/settings?error=' + encodeURIComponent('PIN은 숫자 4자리여야 해요 (예: 1234)'));
+  }
+
+  const admin = getSupabaseAdmin();
+  const { data: membership } = await admin
+    .from('memberships')
+    .select('user_id, role, family_id')
+    .eq('id', kidMembershipId)
+    .single();
+  if (!membership) {
+    redirect('/settings?error=' + encodeURIComponent('자녀 멤버십 조회 실패'));
+  }
+
+  const m = membership as { user_id: string; role: string; family_id: string };
+  if (m.role !== 'kid') redirect('/settings?error=' + encodeURIComponent('자녀가 아닙니다'));
+
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const { data: callerRows } = await admin
+    .from('memberships')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('family_id', m.family_id)
+    .eq('role', 'guardian');
+  if (!callerRows || callerRows.length === 0) {
+    redirect('/settings?error=' + encodeURIComponent('권한 없음'));
+  }
+
+  const { data: kidUser } = await admin.auth.admin.getUserById(m.user_id);
+  if (!kidUser?.user) redirect('/settings?error=' + encodeURIComponent('자녀 인증 조회 실패'));
+
+  const currentMeta = (kidUser.user.user_metadata ?? {}) as Record<string, unknown>;
+  const { error: uErr } = await admin.auth.admin.updateUserById(m.user_id, {
+    user_metadata: { ...currentMeta, kid_pin: newPin },
+  });
+  if (uErr) {
+    logger.error('changeKidPin: update failed', { request_id: reqId, error_code: uErr.message });
+    redirect('/settings?error=' + encodeURIComponent('PIN 업데이트 실패'));
+  }
+
+  logger.info('changeKidPin: success', { request_id: reqId, action: 'changeKidPin', success: true });
+  revalidatePath('/settings');
+  redirect('/settings?pin_changed=1');
+}
 
 export async function updateSettings(formData: FormData): Promise<void> {
   const reqId = generateRequestId();
