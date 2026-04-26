@@ -1,8 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getMyKidAccount } from '@/lib/db/queries';
 import { getSupabaseServerClient } from '@/lib/db/client';
-import { GrowthChart } from '@/lib/ui/chart';
-import { buildHistorySeries } from '@/lib/db/history';
 import type { WeeklySnapshotRow } from '@/lib/db/history';
 
 export const dynamic = 'force-dynamic';
@@ -95,10 +93,6 @@ export default async function KidHistoryPage() {
   ]);
 
   const rows = (snapshots ?? []) as WeeklySnapshotRow[];
-  const series = buildHistorySeries({
-    snapshots: rows,
-    weeklyGrowthRateBp: Number(ctx.account.weekly_growth_rate_bp ?? 1000),
-  });
 
   const txViews = mergeSimultaneous(
     ((txs ?? []) as TxRow[])
@@ -108,18 +102,9 @@ export default async function KidHistoryPage() {
 
   return (
     <main className="page">
-      <h1 className="h1" style={{ marginBottom: 'var(--sp-2)' }}>📊 내 통장이 자라는 곡선</h1>
-      <p className="muted" style={{ marginBottom: 'var(--sp-5)' }}>
-        통장 잔액이 매주 어떻게 자라는지 보여주는 그래프에요.
-        <strong style={{ color: 'var(--experiment-deep)' }}> 점선</strong>은 매주 청구했다면의 곡선,
-        <strong> 실선</strong>은 실제 곡선이에요.
-      </p>
+      <h1 className="h1" style={{ marginBottom: 'var(--sp-5)' }}>📋 통장 기록</h1>
 
-      <div className="card" style={{ marginBottom: 'var(--sp-5)' }}>
-        <GrowthChart points={series} />
-      </div>
-
-      <h2 className="h2" style={{ marginBottom: 'var(--sp-3)' }}>📋 들어온 돈 히스토리</h2>
+      <h2 className="h2" style={{ marginBottom: 'var(--sp-3)' }}>들어온 돈 히스토리</h2>
       <p className="muted" style={{ marginBottom: 'var(--sp-3)', fontSize: '0.9rem' }}>
         원금 (저금)과 이자가 언제, 얼마씩 들어왔는지 보여줘요. 최근부터.
       </p>

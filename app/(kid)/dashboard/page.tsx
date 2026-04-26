@@ -157,7 +157,7 @@ export default async function KidDashboardPage({
 
       <section style={{ marginBottom: 'var(--sp-5)' }}>
         <Link href="/history" className="btn btn-subtle btn-block" style={{ justifyContent: 'center' }}>
-          📊 자세한 히스토리 보기
+          📋 통장 기록 보기 (저금/이자 들어온 내역)
         </Link>
       </section>
 
