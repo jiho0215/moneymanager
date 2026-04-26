@@ -160,18 +160,7 @@ function NextActivity({
         >
           ① ✨ 산수 풀고 이번 주 이자 받기 →
         </Link>
-        <div
-          className="muted"
-          style={{
-            textAlign: 'center',
-            fontSize: '0.92rem',
-            padding: 'var(--sp-2)',
-            background: 'var(--surface-2)',
-            borderRadius: 'var(--r-sm)',
-          }}
-        >
-          ② ⏳ 기다리기 — 단, 이번 주 안에 풀어야 이자가 들어가요.
-        </div>
+        <WaitOption label="② ⏳ 기다리기 — 단, 이번 주 안에 풀어야 이자가 들어가요." muted />
       </div>
     );
   }
@@ -187,21 +176,9 @@ function NextActivity({
             textAlign: 'center',
           }}
         >
-          ① 산수 풀기 — 다음 월요일 첫 주 시작 후 가능
+          ① 산수 풀기 — 첫 일요일 첫 주 시작 후 가능
         </div>
-        <div
-          style={{
-            padding: 'var(--sp-4)',
-            background: 'var(--experiment-bg)',
-            borderRadius: 'var(--r-sm)',
-            border: '1px solid var(--experiment)',
-            textAlign: 'center',
-            color: 'var(--experiment-deep)',
-            fontWeight: 600,
-          }}
-        >
-          ② ⏳ 그때까지 기다리기
-        </div>
+        <WaitOption label="② ⏳ 그때까지 기다리기" />
       </div>
     );
   }
@@ -218,19 +195,89 @@ function NextActivity({
       >
         ① 산수 풀기 — ✅ {lastClaimed}주차 청구 완료
       </div>
+      <WaitOption label="② ⏳ 다음 일요일까지 기다리기" />
+    </div>
+  );
+}
+
+function WaitOption({ label, muted = false }: { label: string; muted?: boolean }) {
+  const baseStyle: React.CSSProperties = muted
+    ? {
+        background: 'var(--surface-2)',
+        color: 'var(--text-muted)',
+        fontSize: '0.92rem',
+      }
+    : {
+        background: 'var(--experiment-bg)',
+        border: '1px solid var(--experiment)',
+        color: 'var(--experiment-deep)',
+        fontWeight: 600,
+      };
+  return (
+    <details
+      style={{
+        borderRadius: 'var(--r-sm)',
+        overflow: 'hidden',
+        ...baseStyle,
+      }}
+    >
+      <summary
+        style={{
+          padding: 'var(--sp-4)',
+          textAlign: 'center',
+          cursor: 'pointer',
+          listStyle: 'none',
+          userSelect: 'none',
+        }}
+      >
+        {label} <span style={{ opacity: 0.6, fontSize: '0.85rem' }}>(왜? 누르기)</span>
+      </summary>
       <div
         style={{
           padding: 'var(--sp-4)',
-          background: 'var(--experiment-bg)',
-          borderRadius: 'var(--r-sm)',
-          border: '1px solid var(--experiment)',
-          textAlign: 'center',
-          color: 'var(--experiment-deep)',
-          fontWeight: 600,
+          background: 'rgba(255,255,255,0.7)',
+          color: 'var(--text)',
+          fontWeight: 400,
+          fontSize: '0.95rem',
+          textAlign: 'left',
+          lineHeight: 1.7,
+          borderTop: '1px solid var(--border)',
         }}
       >
-        ② ⏳ 다음 일요일까지 기다리기
+        <h4 style={{ margin: '0 0 var(--sp-3)', fontSize: '1.05rem' }}>
+          🤔 왜 지금은 기다려야 해?
+        </h4>
+
+        <p style={{ margin: '0 0 var(--sp-3)' }}>
+          <strong>🌱 통장의 돈은 매주 한 번 자라요.</strong>
+          <br />
+          은행이나 적금처럼, 한 주가 지나야 이자가 만들어져. 한 주가 안 지났는데
+          이자를 받으려고 하면, <em>아직 만들어지지 않은 돈</em>을 달라는 거야.
+        </p>
+
+        <p style={{ margin: '0 0 var(--sp-3)' }}>
+          <strong>⏳ 시간이 일을 해.</strong>
+          <br />
+          네가 잠자고, 학교 가고, 노는 동안에도 — 통장에 들어있는 돈이 일하고
+          있어. 이걸 <strong>복리(複利)</strong>라고 해. 이자에 또 이자가
+          붙어서, <em>가만히 있어도</em> 돈이 돈을 벌어주는 거야.
+        </p>
+
+        <p style={{ margin: '0 0 var(--sp-3)' }}>
+          <strong>🎯 그래서 너의 진짜 일은 두 가지.</strong>
+        </p>
+        <ol style={{ margin: '0 0 var(--sp-3)', paddingLeft: '1.4rem' }}>
+          <li>시간이 흐르길 기다리기 — <em>가만히 있는 것도 중요한 일</em>이에요!</li>
+          <li>매주 일요일에 잊지 않고 산수 풀고 청구하기</li>
+        </ol>
+
+        <p style={{ margin: 0, padding: 'var(--sp-3)', background: 'var(--experiment-bg)', borderRadius: 'var(--r-sm)' }}>
+          <strong>💎 부자가 되는 사람들의 비밀</strong>
+          <br />
+          <strong>참을성</strong> (빨리 받으려 하지 않기) + <strong>꾸준함</strong> (매주
+          한 번씩 빠짐없이 챙기기). 너는 지금 그 연습을 하고 있어. 멋지지?
+        </p>
       </div>
-    </div>
+    </details>
   );
 }
