@@ -1,8 +1,8 @@
 {
-  "name": "moneymanager",
+  "name": "moneybean",
   "version": "0.1.0",
   "private": true,
-  "description": "Compound Learning System — Family web app for kids to experience compound interest",
+  "description": "Money Bean — Family web app for kids to experience compound interest",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

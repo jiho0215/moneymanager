@@ -5,9 +5,12 @@ export default function HomePage() {
     <main className="page">
       <div style={{ textAlign: 'center', padding: 'var(--sp-7) 0' }}>
         <div style={{ fontSize: '4rem', marginBottom: 'var(--sp-3)' }}>🌱</div>
-        <h1 className="h1" style={{ marginBottom: 'var(--sp-3)' }}>
-          Compound Learning System
+        <h1 className="h1" style={{ marginBottom: 'var(--sp-2)' }}>
+          Money Bean
         </h1>
+        <p className="soft" style={{ margin: '0 0 var(--sp-3)', fontSize: '0.95rem' }}>
+          작은 콩 한 알이 큰 통장으로
+        </p>
         <p className="lead" style={{ marginBottom: 'var(--sp-6)' }}>
           가족이 함께 경험하는 <strong>시간의 가치</strong>
         </p>
