@@ -132,7 +132,7 @@ export function KidWizard({
               label="저금 방식"
               value={scenario === 'one-time' ? '1️⃣ 한 번 저축' : '2️⃣ 꾸준히 적금'}
             />
-            <SummaryRow label="주간 이자" value={`${weeklyRatePct}% / 주 (보호자가 정함)`} />
+            <SummaryRow label="주간 이자" value={`${weeklyRatePct}% / 주`} />
             <SummaryRow label="기간" value={`${weeks}주`} />
             <SummaryRow label={`${weeks}주 후 예상`} value={fmt(projected)} highlight />
           </div>
