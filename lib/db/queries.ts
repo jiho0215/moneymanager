@@ -7,7 +7,7 @@ export async function getMyKidAccount() {
 
   const { data: membership } = await supabase
     .from('memberships')
-    .select('id, family_id, role, display_name, age_tier, grade')
+    .select('id, family_id, role, display_name, age_tier, grade, access_code')
     .eq('user_id', user.id)
     .single();
   if (!membership) return null;
@@ -19,6 +19,7 @@ export async function getMyKidAccount() {
     display_name: string;
     age_tier: string | null;
     grade: number | null;
+    access_code: string | null;
   };
 
   if (m.role !== 'kid') return null;
@@ -30,7 +31,20 @@ export async function getMyKidAccount() {
     .single();
   if (!account) return null;
 
-  return { membership: m, account: account as Record<string, number | string | null> };
+  const { data: guardians } = await supabase
+    .from('memberships')
+    .select('display_name')
+    .eq('family_id', m.family_id)
+    .eq('role', 'guardian')
+    .limit(1);
+  const guardianName =
+    (guardians?.[0] as { display_name: string } | undefined)?.display_name ?? '';
+
+  return {
+    membership: m,
+    account: account as Record<string, number | string | null>,
+    guardianName,
+  };
 }
 
 export async function getCurrentWeekNum(accountId: string): Promise<number> {

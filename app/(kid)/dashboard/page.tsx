@@ -4,6 +4,7 @@ import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
 import { transferToExperiment } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
 import { GoalBanner, GuideCard } from '@/lib/ui/goal-banner';
+import { RememberKidOnMount } from '@/lib/ui/remember-on-mount';
 import { getSupabaseServerClient } from '@/lib/db/client';
 
 export const dynamic = 'force-dynamic';
@@ -38,6 +39,11 @@ export default async function KidDashboardPage() {
 
   return (
     <main className="page">
+      <RememberKidOnMount
+        code={ctx.membership.access_code}
+        nickname={ctx.membership.display_name}
+        guardianName={ctx.guardianName}
+      />
       <header style={{ marginBottom: 'var(--sp-4)' }}>
         <div className="soft" style={{ marginBottom: 4 }}>안녕하세요</div>
         <h1 className="h1">🌱 {membership.display_name}</h1>
