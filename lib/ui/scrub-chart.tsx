@@ -57,14 +57,38 @@ function getXTicks(max: number): number[] {
   return Array.from({ length: 6 }, (_, i) => Math.round((max * i) / 5));
 }
 
-export function ScrubChart() {
-  const [tick, setTick] = useState(8);
-  const [maxTicks, setMaxTicks] = useState(20);
-  const [mode, setMode] = useState<Mode>('years');
-  const [scenario, setScenario] = useState<Scenario>('regular');
-  const [principal, setPrincipal] = useState(10_000);
-  const [ratePct, setRatePct] = useState(10);
-  const [addition, setAddition] = useState(1_000);
+export type ActualHistoryPoint = { tick: number; balance: number };
+
+export type ScrubChartProps = {
+  initialPrincipal?: number;
+  initialRatePct?: number;
+  initialMode?: Mode;
+  initialMaxTicks?: number;
+  initialAddition?: number;
+  initialScenario?: Scenario;
+  initialTick?: number;
+  actualHistory?: ActualHistoryPoint[];
+  actualLabel?: string;
+};
+
+export function ScrubChart({
+  initialPrincipal = 10_000,
+  initialRatePct = 10,
+  initialMode = 'years',
+  initialMaxTicks = 20,
+  initialAddition = 1_000,
+  initialScenario = 'regular',
+  initialTick = 8,
+  actualHistory,
+  actualLabel = '🔵 나의 실제',
+}: ScrubChartProps = {}) {
+  const [tick, setTick] = useState(initialTick);
+  const [maxTicks, setMaxTicks] = useState(initialMaxTicks);
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const [scenario, setScenario] = useState<Scenario>(initialScenario);
+  const [principal, setPrincipal] = useState(initialPrincipal);
+  const [ratePct, setRatePct] = useState(initialRatePct);
+  const [addition, setAddition] = useState(initialAddition);
   const [dragging, setDragging] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const rateBp = ratePct * 100;
@@ -390,6 +414,34 @@ export function ScrubChart() {
           <path d={simplePath} fill="none" stroke="#f59e0b" strokeWidth={2.5} strokeDasharray="2 4" />
           <path d={compoundPath} fill="none" stroke="#16a34a" strokeWidth={3.5} />
 
+          {/* Actual history overlay (kid's real progression) */}
+          {actualHistory && actualHistory.length > 0 && (
+            <>
+              <path
+                d={actualHistory
+                  .filter((p) => p.tick <= maxTicks)
+                  .map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.tick)} ${yScale(p.balance)}`)
+                  .join(' ')}
+                fill="none"
+                stroke="#2563eb"
+                strokeWidth={3}
+              />
+              {actualHistory
+                .filter((p) => p.tick <= maxTicks)
+                .map((p) => (
+                  <circle
+                    key={`actual-${p.tick}`}
+                    cx={xScale(p.tick)}
+                    cy={yScale(p.balance)}
+                    r={5}
+                    fill="#2563eb"
+                    stroke="white"
+                    strokeWidth={2}
+                  />
+                ))}
+            </>
+          )}
+
           {/* Vertical indicator */}
           <line
             x1={xScale(tick)}
@@ -436,6 +488,12 @@ export function ScrubChart() {
             <span style={{ display: 'inline-block', width: 22, borderTop: '4px solid #16a34a' }} />
             <span><strong>🌳 복리</strong> <span className="muted">{scenario === 'one-time' ? `${ratePct}%씩 자람` : `적금 + ${ratePct}% 이자`}</span></span>
           </span>
+          {actualHistory && actualHistory.length > 0 && (
+            <span className="row gap-2" style={{ alignItems: 'center' }}>
+              <span style={{ display: 'inline-block', width: 22, borderTop: '4px solid #2563eb' }} />
+              <span><strong>{actualLabel}</strong> <span className="muted">실제 통장</span></span>
+            </span>
+          )}
         </div>
       </div>
 

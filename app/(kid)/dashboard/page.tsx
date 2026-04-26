@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
+import { getSupabaseServerClient } from '@/lib/db/client';
 import { GoalBanner, GuideCard } from '@/lib/ui/goal-banner';
 import { RememberKidOnMount } from '@/lib/ui/remember-on-mount';
-import { ProjectionChart } from '@/lib/ui/projection-chart';
+import { ScrubChart, type ActualHistoryPoint } from '@/lib/ui/scrub-chart';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,30 @@ export default async function KidDashboardPage() {
   const total = principal + interest;
   const lastClaimed = account.last_claimed_week_num !== null ? Number(account.last_claimed_week_num) : null;
   const canClaimNow = week > Number(account.week_num_started) && (lastClaimed === null || lastClaimed < week);
+
+  const startingCapital = Number(account.starting_capital);
+  const ratePct = Math.round(Number(account.weekly_growth_rate_bp ?? 1000) / 100);
+
+  const supabase = await getSupabaseServerClient();
+  const { data: snaps } = await supabase
+    .from('weekly_snapshots')
+    .select('week_num, free_balance, experiment_balance, bonus_balance')
+    .eq('account_id', accountId)
+    .eq('cycle_number', Number(account.cycle_number))
+    .order('week_num', { ascending: true });
+
+  const actualHistory: ActualHistoryPoint[] = ((snaps ?? []) as Array<{
+    week_num: number;
+    free_balance: number;
+    experiment_balance: number;
+    bonus_balance: number;
+  }>).map((s) => ({
+    tick: Number(s.week_num),
+    balance: Number(s.free_balance) + Number(s.experiment_balance) + Number(s.bonus_balance),
+  }));
+  if (week > 0 && (actualHistory.length === 0 || actualHistory[actualHistory.length - 1]!.tick < week)) {
+    actualHistory.push({ tick: week, balance: total });
+  }
 
   return (
     <main className="page">
@@ -92,35 +117,41 @@ export default async function KidDashboardPage() {
         </div>
       </section>
 
-      <section className="card stack-4" style={{ marginBottom: 'var(--sp-5)' }}>
-        <h2 className="h3" style={{ margin: 0 }}>📐 내 저금 계획</h2>
-        <div
-          className="grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 'var(--sp-2) var(--sp-3)',
-            fontSize: '0.92rem',
-          }}
-        >
-          <div className="muted">시작 원금</div>
-          <div style={{ fontWeight: 600 }}>{fmt(Number(account.starting_capital))}</div>
-          <div className="muted">저금 방식</div>
-          <div style={{ fontWeight: 600 }}>매주 산수 풀고 청구 (능동 복리)</div>
-          <div className="muted">주간 이자</div>
-          <div style={{ fontWeight: 600 }}>{Number(account.weekly_growth_rate_bp ?? 1000) / 100}% / 주</div>
-          <div className="muted">기간</div>
-          <div style={{ fontWeight: 600 }}>8주 (≈ 1년치 복리 경험)</div>
+      <section className="stack-4" style={{ marginBottom: 'var(--sp-5)' }}>
+        <div className="card stack-2">
+          <h2 className="h3" style={{ margin: 0 }}>📐 내 저금 계획</h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 'var(--sp-2) var(--sp-3)',
+              fontSize: '0.92rem',
+            }}
+          >
+            <div className="muted">시작 원금</div>
+            <div style={{ fontWeight: 600 }}>{fmt(startingCapital)}</div>
+            <div className="muted">저금 방식</div>
+            <div style={{ fontWeight: 600 }}>매주 산수 풀고 청구 (능동 복리)</div>
+            <div className="muted">주간 이자</div>
+            <div style={{ fontWeight: 600 }}>{ratePct}% / 주</div>
+            <div className="muted">기간</div>
+            <div style={{ fontWeight: 600 }}>8주 (≈ 1년치 복리 경험)</div>
+          </div>
+          <p className="muted" style={{ margin: 0, fontSize: '0.88rem' }}>
+            <strong style={{ color: '#2563eb' }}>파란선</strong>이 너의 실제 통장이에요. <strong style={{ color: '#16a34a' }}>초록선(복리)</strong>과 가까이 붙어있을수록 매주 잘 청구한 거예요.
+          </p>
         </div>
-        <p className="muted" style={{ margin: 0, fontSize: '0.88rem' }}>
-          매주 빠짐없이 청구했을 때의 예상 곡선이에요. 현재 위치(●)가 곡선 위에 있으면 잘 따라가고 있는 거예요.
-        </p>
-        <ProjectionChart
-          startingPrincipal={Number(account.starting_capital)}
-          weeklyRateBp={Number(account.weekly_growth_rate_bp ?? 1000)}
-          totalWeeks={8}
-          currentWeek={week}
-          currentBalance={total}
+
+        <ScrubChart
+          initialPrincipal={startingCapital}
+          initialRatePct={ratePct}
+          initialMode="weeks"
+          initialMaxTicks={8}
+          initialAddition={0}
+          initialScenario="one-time"
+          initialTick={Math.min(8, Math.max(0, week))}
+          actualHistory={actualHistory}
+          actualLabel="🔵 나의 실제"
         />
       </section>
 
