@@ -54,6 +54,8 @@ const PRESET_ADDITIONS = [0, 500, 1_000, 5_000, 10_000];
 const PRESET_RANGES = [1, 5, 10, 20];
 
 function getXTicks(max: number): number[] {
+  // For small ranges, show every tick. For larger ranges, space 6 evenly.
+  if (max <= 10) return Array.from({ length: max + 1 }, (_, i) => i);
   return Array.from({ length: 6 }, (_, i) => Math.round((max * i) / 5));
 }
 
