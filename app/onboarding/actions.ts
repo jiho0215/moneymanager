@@ -14,6 +14,16 @@ export async function saveParentRecommendations(formData: FormData): Promise<voi
   const totalWeeks = Number(formData.get('totalWeeks'));
   const ratePct = Number(formData.get('ratePct'));
 
+  logger.info('saveParentRecommendations: invoked', {
+    request_id: reqId,
+    action: 'saveParentRecommendations:start',
+    accountId,
+    startingCapital,
+    scenario,
+    totalWeeks,
+    ratePct,
+  });
+
   if (
     !accountId ||
     !Number.isInteger(startingCapital) ||
