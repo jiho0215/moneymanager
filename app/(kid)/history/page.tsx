@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMyKidAccount } from '@/lib/db/queries';
 import { getSupabaseServerClient } from '@/lib/db/client';
@@ -30,9 +29,9 @@ export default async function KidHistoryPage() {
 
   return (
     <main className="page">
-      <h1 className="h1" style={{ marginBottom: 'var(--sp-2)' }}>📊 내 잔액이 자라는 곡선</h1>
+      <h1 className="h1" style={{ marginBottom: 'var(--sp-2)' }}>📊 내 통장이 자라는 곡선</h1>
       <p className="muted" style={{ marginBottom: 'var(--sp-5)' }}>
-        실험 영역의 잔액이 매주 어떻게 자라는지 보여주는 그래프에요.
+        통장 잔액이 매주 어떻게 자라는지 보여주는 그래프에요.
         <strong style={{ color: 'var(--experiment-deep)' }}> 점선</strong>은 매주 청구했다면의 곡선,
         <strong> 실선</strong>은 실제 곡선이에요.
       </p>
@@ -47,9 +46,9 @@ export default async function KidHistoryPage() {
           <thead>
             <tr>
               <th>주</th>
-              <th className="num">자유</th>
-              <th className="num">실험</th>
-              <th className="num">보너스</th>
+              <th className="num">저금</th>
+              <th className="num">이자</th>
+              <th className="num">합계</th>
               <th>청구</th>
             </tr>
           </thead>
@@ -57,22 +56,28 @@ export default async function KidHistoryPage() {
             {rows.length === 0 && (
               <tr><td colSpan={5} style={{ padding: 'var(--sp-5)', textAlign: 'center' }} className="muted">첫 청구 후 데이터가 나타나요.</td></tr>
             )}
-            {rows.map((r) => (
-              <tr key={r.week_num}>
-                <td><strong>{r.week_num}주</strong></td>
-                <td className="num">{fmt(Number(r.free_balance))}</td>
-                <td className="num" style={{ color: 'var(--experiment-deep)', fontWeight: 600 }}>{fmt(Number(r.experiment_balance))}</td>
-                <td className="num">{fmt(Number(r.bonus_balance))}</td>
-                <td>
-                  {r.was_claimed_this_week
-                    ? <span className="badge badge-success">✅ 청구함</span>
-                    : <span className="badge badge-muted">—</span>}
-                </td>
-              </tr>
-            ))}
+            {rows.map((r) => {
+              const principal = Number(r.free_balance);
+              const interest = Number(r.experiment_balance) + Number(r.bonus_balance);
+              return (
+                <tr key={r.week_num}>
+                  <td><strong>{r.week_num}주</strong></td>
+                  <td className="num">{fmt(principal)}</td>
+                  <td className="num" style={{ color: 'var(--experiment-deep)', fontWeight: 600 }}>
+                    {interest > 0 ? '+' : ''}{fmt(interest)}
+                  </td>
+                  <td className="num"><strong>{fmt(principal + interest)}</strong></td>
+                  <td>
+                    {r.was_claimed_this_week
+                      ? <span className="badge badge-success">✅ 청구함</span>
+                      : <span className="badge badge-muted">—</span>}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-</main>
+    </main>
   );
 }

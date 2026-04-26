@@ -63,10 +63,9 @@ export async function changeKidPin(formData: FormData): Promise<void> {
 export async function updateSettings(formData: FormData): Promise<void> {
   const reqId = generateRequestId();
   const accountId = String(formData.get('accountId') ?? '');
-  const bonusMatchRateBp = Number(formData.get('bonusMatchRateBp'));
   const weeklyDeadlineDow = Number(formData.get('weeklyDeadlineDow'));
 
-  if (!accountId || !Number.isInteger(bonusMatchRateBp) || !Number.isInteger(weeklyDeadlineDow)) {
+  if (!accountId || !Number.isInteger(weeklyDeadlineDow)) {
     redirect('/settings?error=invalid');
   }
 
@@ -74,7 +73,6 @@ export async function updateSettings(formData: FormData): Promise<void> {
   const { error } = await admin
     .from('accounts')
     .update({
-      bonus_match_rate_bp: bonusMatchRateBp,
       weekly_deadline_dow: weeklyDeadlineDow,
       updated_at: new Date().toISOString(),
     })
@@ -94,9 +92,8 @@ export async function depositToKid(formData: FormData): Promise<void> {
   const reqId = generateRequestId();
   const accountId = String(formData.get('accountId') ?? '');
   const amount = Number(formData.get('amount'));
-  const zone = String(formData.get('zone'));
 
-  if (!accountId || !Number.isInteger(amount) || amount <= 0 || !['free', 'experiment'].includes(zone)) {
+  if (!accountId || !Number.isInteger(amount) || amount <= 0) {
     redirect('/settings?error=invalid');
   }
 
@@ -104,14 +101,13 @@ export async function depositToKid(formData: FormData): Promise<void> {
   const { data, error } = await admin.rpc('process_deposit', {
     p_account_id: accountId,
     p_amount: amount,
-    p_zone: zone,
   });
 
   if (error) {
     logger.error('depositToKid: rpc error', { request_id: reqId, error_code: error.message });
     redirect('/settings?error=' + encodeURIComponent(error.message));
   }
-  const result = data as { ok: boolean; reason?: string; bonus_amount?: number };
+  const result = data as { ok: boolean; reason?: string };
   if (!result.ok) {
     redirect('/settings?error=' + encodeURIComponent(result.reason ?? 'failed'));
   }

@@ -23,29 +23,27 @@ describe('Family creation + PIPA + multi-tenancy', () => {
     expect(consents![0]!.accepted_by_user_id).toBe(fam.guardianUserId);
   }, 30000);
 
-  it('account split: 80% free, 20% experiment for 50000 starting', async () => {
+  it('통장 model: 100% of starting capital lands in free_balance (원금)', async () => {
     const admin = getAdminClient();
     const { data: account } = await admin.from('accounts').select('*').eq('id', fam.accountId).single();
     expect(Number(account?.starting_capital)).toBe(50000);
-    expect(Number(account?.free_balance)).toBe(40000);
-    expect(Number(account?.experiment_balance)).toBe(10000);
+    expect(Number(account?.free_balance)).toBe(50000);
+    expect(Number(account?.experiment_balance)).toBe(0);
     expect(Number(account?.bonus_balance)).toBe(0);
     expect(account?.cycle_status).toBe('active');
     expect(Number(account?.cycle_number)).toBe(1);
   }, 30000);
 
-  it('initial_deposit transactions: 2 rows (free + experiment)', async () => {
+  it('initial_deposit transactions: single row, all in free zone', async () => {
     const admin = getAdminClient();
     const { data: txs } = await admin
       .from('transactions')
       .select('*')
       .eq('account_id', fam.accountId)
       .eq('transaction_type', 'initial_deposit');
-    expect(txs?.length).toBe(2);
-    const free = txs!.find((t) => t.zone === 'free');
-    const exp = txs!.find((t) => t.zone === 'experiment');
-    expect(Number(free?.amount)).toBe(40000);
-    expect(Number(exp?.amount)).toBe(10000);
+    expect(txs?.length).toBe(1);
+    expect(txs![0]!.zone).toBe('free');
+    expect(Number(txs![0]!.amount)).toBe(50000);
   }, 30000);
 
   it('week_num starts at 0', async () => {
@@ -69,7 +67,8 @@ describe('Family creation + PIPA + multi-tenancy', () => {
       .eq('account_id', fam.accountId)
       .eq('week_num', 0);
     expect(snaps?.length).toBe(1);
-    expect(Number(snaps![0]!.experiment_balance)).toBe(10000);
+    expect(Number(snaps![0]!.free_balance)).toBe(50000);
+    expect(Number(snaps![0]!.experiment_balance)).toBe(0);
     expect(Number(snaps![0]!.total_balance)).toBe(50000);
   }, 30000);
 

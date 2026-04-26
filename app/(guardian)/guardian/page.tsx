@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getGuardianFamilyView } from '@/lib/db/queries';
 
@@ -12,6 +11,7 @@ export default async function GuardianHomePage() {
   const accounts = ctx.accounts as Array<{
     id: string; membership_id: string; free_balance: number; experiment_balance: number;
     bonus_balance: number; cycle_number: number; cycle_status: string; last_claimed_week_num: number | null;
+    starting_capital: number;
   }>;
   const kids = ctx.kids as Array<{ id: string; display_name: string; grade: number }>;
 
@@ -23,14 +23,16 @@ export default async function GuardianHomePage() {
       </header>
 
       <p className="muted" style={{ marginBottom: 'var(--sp-5)' }}>
-        자녀의 활동을 한눈에 확인할 수 있어요.
+        자녀의 통장을 한눈에 확인할 수 있어요.
       </p>
 
       <div className="stack-4">
         {kids.map((kid) => {
           const account = accounts.find((a) => String(a.membership_id) === String(kid.id));
           if (!account) return null;
-          const total = Number(account.free_balance) + Number(account.experiment_balance) + Number(account.bonus_balance);
+          const principal = Number(account.free_balance);
+          const interest = Number(account.experiment_balance) + Number(account.bonus_balance);
+          const total = principal + interest;
           const lastClaim = account.last_claimed_week_num;
           return (
             <section key={kid.id} className="card stack-3">
@@ -46,32 +48,36 @@ export default async function GuardianHomePage() {
                 </div>
               </div>
 
-              <div className="grid-3">
-                <Stat tint="free" label="자유" amount={Number(account.free_balance)} icon="👛" />
-                <Stat tint="experiment" label="실험" amount={Number(account.experiment_balance)} icon="🌳" />
-                <Stat tint="bonus" label="보너스" amount={Number(account.bonus_balance)} icon="💧" />
+              <div
+                className="amount"
+                style={{
+                  fontSize: '2rem',
+                  fontWeight: 800,
+                  textAlign: 'center',
+                  color: 'var(--experiment-deep)',
+                  padding: 'var(--sp-3) 0',
+                }}
+              >
+                {fmt(total)}
               </div>
 
-              <div className="row-between" style={{ paddingTop: 'var(--sp-3)', borderTop: '1px solid var(--border)' }}>
-                <span className="muted">합계</span>
-                <span className="amount amount-lg">{fmt(total)}</span>
+              <div
+                className="row-between"
+                style={{ paddingTop: 'var(--sp-3)', borderTop: '1px dashed var(--border)' }}
+              >
+                <span className="muted">📥 저금 (원금)</span>
+                <span style={{ fontWeight: 600 }}>{fmt(principal)}</span>
+              </div>
+              <div className="row-between">
+                <span className="muted">📈 이자 누적</span>
+                <span style={{ fontWeight: 600, color: 'var(--experiment-deep)' }}>
+                  {interest > 0 ? '+' : ''}{fmt(interest)}
+                </span>
               </div>
             </section>
           );
         })}
       </div>
     </main>
-  );
-}
-
-function Stat({ tint, label, amount, icon }: { tint: 'free' | 'experiment' | 'bonus'; label: string; amount: number; icon: string }) {
-  return (
-    <div className={`card card-tinted-${tint}`} style={{ padding: 'var(--sp-4)' }}>
-      <div className="row-between" style={{ marginBottom: 6 }}>
-        <span className="label" style={{ color: `var(--${tint}-deep)` }}>{label}</span>
-        <span style={{ fontSize: '1.2rem' }}>{icon}</span>
-      </div>
-      <div className="amount" style={{ fontSize: '1.25rem', color: `var(--${tint}-deep)` }}>{fmt(amount)}</div>
-    </div>
   );
 }

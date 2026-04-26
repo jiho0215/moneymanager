@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 import { applyWeeklyInterest } from '@/lib/domain/compound';
 
 export type GoalBannerProps = {
-  startingExperimentBalance: number;
-  currentExperimentBalance: number;
+  startingBalance: number;
+  currentBalance: number;
   weeklyGrowthRateBp: number;
   currentWeekNum: number;
   lastClaimedWeekNum: number | null;
@@ -24,29 +24,28 @@ function computeFinalGoal(start: number, rateBp: number, weeks: number): number 
 }
 
 export function GoalBanner({
-  startingExperimentBalance,
-  currentExperimentBalance,
+  startingBalance,
+  currentBalance,
   weeklyGrowthRateBp,
   currentWeekNum,
   lastClaimedWeekNum,
   totalWeeks = 8,
   kidName,
 }: GoalBannerProps) {
-  const goal = computeFinalGoal(startingExperimentBalance, weeklyGrowthRateBp, totalWeeks);
+  const goal = computeFinalGoal(startingBalance, weeklyGrowthRateBp, totalWeeks);
   const progressPct = Math.min(
     100,
     Math.max(
       0,
-      ((currentExperimentBalance - startingExperimentBalance) /
-        Math.max(1, goal - startingExperimentBalance)) *
+      ((currentBalance - startingBalance) /
+        Math.max(1, goal - startingBalance)) *
         100
     )
   );
   const weekDone = Math.min(totalWeeks, Math.max(0, currentWeekNum));
   const stageEmoji = WEEK_STAGE_EMOJIS[Math.min(WEEK_STAGE_EMOJIS.length - 1, weekDone)];
 
-  const weeklyAdd = applyWeeklyInterest(currentExperimentBalance, weeklyGrowthRateBp) -
-    currentExperimentBalance;
+  const weeklyAdd = applyWeeklyInterest(currentBalance, weeklyGrowthRateBp) - currentBalance;
   const canClaimNow =
     currentWeekNum > 0 && (lastClaimedWeekNum === null || lastClaimedWeekNum < currentWeekNum);
 
@@ -66,7 +65,7 @@ export function GoalBanner({
       </div>
 
       <div className="row-between" style={{ marginBottom: 12, fontSize: '0.92rem', color: 'var(--text-muted)' }}>
-        <span>지금 <strong style={{ color: 'var(--text)' }}>{fmt(currentExperimentBalance)}</strong></span>
+        <span>지금 <strong style={{ color: 'var(--text)' }}>{fmt(currentBalance)}</strong></span>
         <span>목표 <strong style={{ color: 'var(--experiment-deep)' }}>{fmt(goal)}</strong></span>
       </div>
 
@@ -105,14 +104,14 @@ export function GoalBanner({
             <>
               <strong>이번 주 청구하면 +{fmt(weeklyAdd)}!</strong>
               <div className="soft" style={{ marginTop: 2 }}>
-                산수 한 문제 풀고 이자 받으면 잔액이 자라요.
+                산수 한 문제 풀고 이자 받으면 통장이 자라요.
               </div>
             </>
           ) : currentWeekNum === 0 ? (
             <>
               <strong>다음 월요일부터 첫 주가 시작돼요</strong>
               <div className="soft" style={{ marginTop: 2 }}>
-                매주 일요일에 산수 한 문제 풀면 이자 +10% 받기 시작!
+                매주 일요일에 산수 한 문제 풀면 통장에 이자 +10% 받기 시작!
               </div>
             </>
           ) : (

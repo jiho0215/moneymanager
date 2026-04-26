@@ -20,12 +20,16 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
 
   const grade = (Number(ctx.membership.grade) || 5) as 5 | 6;
   const seed = `${account.id}_${week}`;
+  const totalBalance =
+    Number(account.free_balance) +
+    Number(account.experiment_balance) +
+    Number(account.bonus_balance);
   const problem = generateProblem({
     seed,
     weekNum: week,
     grade,
     recentProblemTypes: [],
-    accountBalance: Number(account.experiment_balance),
+    accountBalance: totalBalance,
   });
 
   const sp = await searchParams;
