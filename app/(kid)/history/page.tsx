@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getMyKidAccount } from '@/lib/db/queries';
 import { getSupabaseServerClient } from '@/lib/db/client';
-import type { WeeklySnapshotRow } from '@/lib/db/history';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,21 +77,11 @@ export default async function KidHistoryPage() {
   const supabase = await getSupabaseServerClient();
   const accountId = String(ctx.account.id);
 
-  const [{ data: snapshots }, { data: txs }] = await Promise.all([
-    supabase
-      .from('weekly_snapshots')
-      .select('*')
-      .eq('account_id', accountId)
-      .eq('cycle_number', Number(ctx.account.cycle_number))
-      .order('week_num', { ascending: true }),
-    supabase
-      .from('transactions')
-      .select('id, transaction_type, zone, amount, week_num, created_at')
-      .eq('account_id', accountId)
-      .order('created_at', { ascending: false }),
-  ]);
-
-  const rows = (snapshots ?? []) as WeeklySnapshotRow[];
+  const { data: txs } = await supabase
+    .from('transactions')
+    .select('id, transaction_type, zone, amount, week_num, created_at')
+    .eq('account_id', accountId)
+    .order('created_at', { ascending: false });
 
   const txViews = mergeSimultaneous(
     ((txs ?? []) as TxRow[])
@@ -102,13 +91,12 @@ export default async function KidHistoryPage() {
 
   return (
     <main className="page">
-      <h1 className="h1" style={{ marginBottom: 'var(--sp-5)' }}>📋 통장 기록</h1>
-
-      <h2 className="h2" style={{ marginBottom: 'var(--sp-3)' }}>들어온 돈 히스토리</h2>
-      <p className="muted" style={{ marginBottom: 'var(--sp-3)', fontSize: '0.9rem' }}>
+      <h1 className="h1" style={{ marginBottom: 'var(--sp-2)' }}>📋 통장 기록</h1>
+      <p className="muted" style={{ marginBottom: 'var(--sp-5)', fontSize: '0.92rem' }}>
         원금 (저금)과 이자가 언제, 얼마씩 들어왔는지 보여줘요. 최근부터.
       </p>
-      <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 'var(--sp-5)' }}>
+
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {txViews.length === 0 ? (
           <div style={{ padding: 'var(--sp-5)', textAlign: 'center' }} className="muted">
             아직 들어온 돈이 없어요.
@@ -140,45 +128,6 @@ export default async function KidHistoryPage() {
             ))}
           </ul>
         )}
-      </div>
-
-      <h2 className="h2" style={{ marginBottom: 'var(--sp-3)' }}>주차별 자세히</h2>
-      <div className="card" style={{ padding: 0, overflow: 'auto' }}>
-        <table className="data">
-          <thead>
-            <tr>
-              <th>주</th>
-              <th className="num">저금</th>
-              <th className="num">이자</th>
-              <th className="num">합계</th>
-              <th>청구</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 && (
-              <tr><td colSpan={5} style={{ padding: 'var(--sp-5)', textAlign: 'center' }} className="muted">첫 청구 후 데이터가 나타나요.</td></tr>
-            )}
-            {rows.map((r) => {
-              const principal = Number(r.free_balance);
-              const interest = Number(r.experiment_balance) + Number(r.bonus_balance);
-              return (
-                <tr key={r.week_num}>
-                  <td><strong>{r.week_num}주</strong></td>
-                  <td className="num">{fmt(principal)}</td>
-                  <td className="num" style={{ color: 'var(--experiment-deep)', fontWeight: 600 }}>
-                    {interest > 0 ? '+' : ''}{fmt(interest)}
-                  </td>
-                  <td className="num"><strong>{fmt(principal + interest)}</strong></td>
-                  <td>
-                    {r.was_claimed_this_week
-                      ? <span className="badge badge-success">✅ 청구함</span>
-                      : <span className="badge badge-muted">—</span>}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
       </div>
     </main>
   );
