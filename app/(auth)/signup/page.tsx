@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { signupFamily } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
+import { TimezonePicker } from '@/lib/ui/timezone-picker';
 
 const PIPA_TEXT = `[개인정보 수집 및 이용 동의 — 만 14세 미만 자녀]
 
@@ -69,6 +70,13 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
           <label className="field">
             가족 이름 *
             <input type="text" name="familyName" required />
+          </label>
+          <label className="field">
+            🌏 가족 시간대 <span className="soft" style={{ fontWeight: 400 }}>(나중에 보호자가 변경 가능)</span>
+            <TimezonePicker name="timezone" />
+            <span className="soft" style={{ fontSize: '0.82rem' }}>
+              청구일과 모든 날짜 표시가 이 시간대로 진행됩니다.
+            </span>
           </label>
           <label className="field">
             자녀 닉네임 * <span className="soft" style={{ fontWeight: 400 }}>(전체에서 유일해야 해요)</span>

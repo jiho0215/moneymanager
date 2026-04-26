@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation';
 import { getGuardianFamilyView } from '@/lib/db/queries';
-import { updateSettings, depositToKid, chooseCycleEnd, timeWarp, changeKidPin } from './actions';
+import { getSupabaseAdmin } from '@/lib/auth/admin';
+import { updateSettings, depositToKid, chooseCycleEnd, timeWarp, changeKidPin, updateFamilyTimezone } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
+import { TimezonePicker } from '@/lib/ui/timezone-picker';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,10 +13,18 @@ const WARP_LABEL: Record<string, string> = {
   reset_today: '🔄 오늘로 리셋',
 };
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ warped?: string; error?: string; pin_changed?: string }> }) {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ warped?: string; error?: string; pin_changed?: string; tz_changed?: string }> }) {
   const ctx = await getGuardianFamilyView();
   if (!ctx) redirect('/login');
   const sp = await searchParams;
+
+  const admin = getSupabaseAdmin();
+  const { data: family } = await admin
+    .from('families')
+    .select('id, name, timezone')
+    .eq('id', (ctx.guardian as { family_id: string }).family_id)
+    .single();
+  const fam = family as { id: string; name: string; timezone: string } | null;
 
   return (
     <main className="page">
@@ -37,6 +47,30 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <span style={{ fontSize: '1.2rem' }}>🔒</span>
           <div>자녀 PIN이 변경되었어요. 다음 로그인부터 새 PIN으로 들어가야 해요.</div>
         </div>
+      )}
+      {sp.tz_changed && (
+        <div className="alert alert-success fade-in" style={{ marginBottom: 'var(--sp-4)' }}>
+          <span style={{ fontSize: '1.2rem' }}>🌏</span>
+          <div>가족 시간대가 변경되었어요.</div>
+        </div>
+      )}
+
+      {fam && (
+        <section className="card stack-3" style={{ marginBottom: 'var(--sp-5)' }}>
+          <div>
+            <h2 className="h3" style={{ margin: '0 0 4px' }}>🌏 가족 시간대</h2>
+            <p className="muted" style={{ margin: 0, fontSize: '0.88rem' }}>
+              청구일, 사이클 시작일 등 모든 날짜가 이 시간대 기준으로 진행됩니다. 현재 설정: <strong>{fam.timezone}</strong>
+            </p>
+          </div>
+          <form action={updateFamilyTimezone} className="row gap-2">
+            <input type="hidden" name="familyId" value={fam.id} />
+            <div style={{ flex: 1 }}>
+              <TimezonePicker name="timezone" defaultValue={fam.timezone} />
+            </div>
+            <SubmitButton variant="primary" pendingText="변경 중...">변경</SubmitButton>
+          </form>
+        </section>
       )}
 
       <div className="stack-5">

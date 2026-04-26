@@ -6,6 +6,38 @@ import { getSupabaseAdmin } from '@/lib/auth/admin';
 import { getSupabaseServerClient } from '@/lib/db/client';
 import { logger, generateRequestId } from '@/lib/observability/logger';
 
+export async function updateFamilyTimezone(formData: FormData): Promise<void> {
+  const reqId = generateRequestId();
+  const familyId = String(formData.get('familyId') ?? '');
+  const timezone = String(formData.get('timezone') ?? '').trim();
+  if (!familyId || !timezone) {
+    redirect('/settings?error=' + encodeURIComponent('시간대 입력 오류'));
+  }
+
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin.rpc('update_family_timezone', {
+    p_family_id: familyId,
+    p_timezone: timezone,
+    p_actor_user_id: user.id,
+  });
+  if (error) {
+    logger.error('updateFamilyTimezone: rpc error', { request_id: reqId, error_code: error.message });
+    redirect('/settings?error=' + encodeURIComponent(error.message));
+  }
+  const result = data as { ok: boolean; reason?: string };
+  if (!result.ok) {
+    redirect('/settings?error=' + encodeURIComponent(result.reason ?? '실패'));
+  }
+
+  logger.info('updateFamilyTimezone: success', { request_id: reqId, action: 'updateFamilyTimezone', success: true });
+  revalidatePath('/settings');
+  redirect('/settings?tz_changed=1');
+}
+
 export async function changeKidPin(formData: FormData): Promise<void> {
   const reqId = generateRequestId();
   const kidMembershipId = String(formData.get('kidMembershipId') ?? '');

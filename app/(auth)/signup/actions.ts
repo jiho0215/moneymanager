@@ -26,6 +26,7 @@ export async function signupFamily(formData: FormData): Promise<void> {
   const kidNickname = String(formData.get('kidNickname') ?? '').trim();
   const kidGrade = Number(formData.get('kidGrade'));
   const kidPin = String(formData.get('kidPin') ?? '').trim();
+  const timezone = String(formData.get('timezone') ?? 'Asia/Seoul').trim();
   const consent = formData.get('consent') === 'on';
 
   if (!guardianEmail || !guardianPassword || !familyName || !kidNickname || !kidPin || !consent) {
@@ -102,6 +103,7 @@ export async function signupFamily(formData: FormData): Promise<void> {
     p_consent_text: PIPA_CONSENT_TEXT_V1,
     p_consent_version: 'v1',
     p_setup_state: 'parent_setup_pending',
+    p_timezone: timezone,
   });
   if (rpcErr) {
     await admin.auth.admin.deleteUser(guardianUserId).catch(() => {});

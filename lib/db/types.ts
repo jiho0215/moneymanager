@@ -47,6 +47,8 @@ export type Database = {
       next_sunday_kst: AnyFunction;
       finalize_parent_recommendations: AnyFunction;
       finalize_kid_choices: AnyFunction;
+      today_midnight_in_tz: AnyFunction;
+      update_family_timezone: AnyFunction;
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

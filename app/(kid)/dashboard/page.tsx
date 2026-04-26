@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
 import { getSupabaseServerClient } from '@/lib/db/client';
+import { getSupabaseAdmin } from '@/lib/auth/admin';
 import { GoalBanner, GuideCard } from '@/lib/ui/goal-banner';
 import { RememberKidOnMount } from '@/lib/ui/remember-on-mount';
 import { ScrubChart, type ActualHistoryPoint } from '@/lib/ui/scrub-chart';
@@ -36,15 +37,30 @@ export default async function KidDashboardPage({
   const lastClaimed = account.last_claimed_week_num !== null ? Number(account.last_claimed_week_num) : null;
   const canClaimNow = week > Number(account.week_num_started) && (lastClaimed === null || lastClaimed < week);
 
-  // First claimable date = epoch + 7 days. Format as "M월 D일 (요일)".
-  function firstClaimDateLabel(epochIso: string | null): string {
+  // Look up the family's timezone for date formatting.
+  const admin = getSupabaseAdmin();
+  const { data: famRow } = await admin
+    .from('memberships')
+    .select('family_id')
+    .eq('id', ctx.membership.id)
+    .single();
+  const familyId = (famRow as { family_id: string } | null)?.family_id ?? null;
+  const { data: fam } = familyId
+    ? await admin.from('families').select('timezone').eq('id', familyId).single()
+    : { data: null };
+  const familyTz = (fam as { timezone: string } | null)?.timezone ?? 'Asia/Seoul';
+
+  // First claimable date = epoch + 7 days, formatted in family TZ.
+  function firstClaimDateLabel(epochIso: string | null, tz: string): string {
     if (!epochIso) return '';
     const firstClaimMs = new Date(epochIso).getTime() + 7 * 24 * 60 * 60 * 1000;
-    const kst = new Date(firstClaimMs + 9 * 60 * 60 * 1000);
-    const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][kst.getUTCDay()];
-    return `${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 (${dayOfWeek})`;
+    const dt = new Date(firstClaimMs);
+    const month = new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'numeric' }).format(dt);
+    const day = new Intl.DateTimeFormat('en-US', { timeZone: tz, day: 'numeric' }).format(dt);
+    const wday = new Intl.DateTimeFormat('ko-KR', { timeZone: tz, weekday: 'narrow' }).format(dt);
+    return `${month}월 ${day}일 (${wday})`;
   }
-  const firstClaimLabel = firstClaimDateLabel(String(account.epoch_kst ?? ''));
+  const firstClaimLabel = firstClaimDateLabel(String(account.epoch_kst ?? ''), familyTz);
 
   const startingCapital = Number(account.starting_capital);
   const ratePct = Math.round(Number(account.weekly_growth_rate_bp ?? 1000) / 100);
@@ -81,7 +97,8 @@ export default async function KidDashboardPage({
       />
       <header style={{ marginBottom: 'var(--sp-4)' }}>
         <div className="soft" style={{ marginBottom: 4 }}>안녕하세요</div>
-        <h1 className="h1">🌱 {membership.display_name}</h1>
+        <h1 className="h1" style={{ marginBottom: 4 }}>🌱 {membership.display_name}</h1>
+        <div className="soft" style={{ fontSize: '0.78rem' }}>🌏 {familyTz} 시간 기준</div>
       </header>
 
       {sp.error && (
