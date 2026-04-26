@@ -44,6 +44,9 @@ export type Database = {
       generate_kid_login_code: AnyFunction;
       rotate_kid_access_code: AnyFunction;
       generate_unique_access_code: AnyFunction;
+      next_sunday_kst: AnyFunction;
+      finalize_parent_recommendations: AnyFunction;
+      finalize_kid_choices: AnyFunction;
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -11,9 +11,14 @@ export default async function GuardianHomePage() {
   const accounts = ctx.accounts as Array<{
     id: string; membership_id: string; free_balance: number; experiment_balance: number;
     bonus_balance: number; cycle_number: number; cycle_status: string; last_claimed_week_num: number | null;
-    starting_capital: number;
+    starting_capital: number; setup_state?: string;
   }>;
   const kids = ctx.kids as Array<{ id: string; display_name: string; grade: number }>;
+
+  // If any kid still needs parent setup, route to onboarding wizard.
+  if (accounts.some((a) => a.setup_state === 'parent_setup_pending')) {
+    redirect('/onboarding');
+  }
 
   return (
     <main className="page page-wide">

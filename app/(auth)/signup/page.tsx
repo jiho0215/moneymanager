@@ -95,10 +95,9 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
               <option value="6">6학년</option>
             </select>
           </label>
-          <label className="field">
-            시작 자금 (KRW, 추천 10,000원) *
-            <input type="number" name="startingCapital" defaultValue={10000} min={1000} max={1000000} step={1000} required />
-          </label>
+          <p className="soft" style={{ margin: 0, fontSize: '0.85rem' }}>
+            ✨ 시작 원금, 저금 방식, 기간은 가입 후 보호자가 직접 정해요.
+          </p>
         </fieldset>
 
         <fieldset className="stack-3">

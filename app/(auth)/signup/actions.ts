@@ -25,7 +25,6 @@ export async function signupFamily(formData: FormData): Promise<void> {
   const guardianDisplayName = String(formData.get('guardianDisplayName') ?? '').trim();
   const kidNickname = String(formData.get('kidNickname') ?? '').trim();
   const kidGrade = Number(formData.get('kidGrade'));
-  const startingCapital = Number(formData.get('startingCapital'));
   const kidPin = String(formData.get('kidPin') ?? '').trim();
   const consent = formData.get('consent') === 'on';
 
@@ -37,9 +36,6 @@ export async function signupFamily(formData: FormData): Promise<void> {
     redirect('/signup?error=' + encodeURIComponent('자녀 PIN은 숫자 4자리여야 해요 (예: 1234).'));
   }
   if (kidGrade < 5 || kidGrade > 6) redirect('/signup?error=' + encodeURIComponent('학년은 5 또는 6'));
-  if (!Number.isInteger(startingCapital) || startingCapital < 1000 || startingCapital > 1_000_000) {
-    redirect('/signup?error=' + encodeURIComponent('시작 자금 1,000-1,000,000 사이'));
-  }
 
   const admin = getSupabaseAdmin();
 
@@ -102,9 +98,10 @@ export async function signupFamily(formData: FormData): Promise<void> {
     p_kid_user_id: kidUserId,
     p_kid_nickname: kidNickname,
     p_kid_grade: kidGrade,
-    p_starting_capital: startingCapital,
+    p_starting_capital: 0,
     p_consent_text: PIPA_CONSENT_TEXT_V1,
     p_consent_version: 'v1',
+    p_setup_state: 'parent_setup_pending',
   });
   if (rpcErr) {
     await admin.auth.admin.deleteUser(guardianUserId).catch(() => {});
@@ -123,5 +120,5 @@ export async function signupFamily(formData: FormData): Promise<void> {
   const supabase = await getSupabaseServerClient();
   await supabase.auth.signInWithPassword({ email: guardianEmail, password: guardianPassword });
 
-  redirect('/guardian');
+  redirect('/onboarding');
 }

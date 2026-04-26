@@ -23,6 +23,9 @@ export default async function KidDashboardPage({
   const sp = await searchParams;
   const ctx = await getMyKidAccount();
   if (!ctx) redirect('/login');
+  if (ctx.account.setup_state && ctx.account.setup_state !== 'active') {
+    redirect('/onboarding');
+  }
 
   const { membership, account } = ctx;
   const accountId = String(account.id);
