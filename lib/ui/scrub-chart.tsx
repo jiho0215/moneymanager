@@ -169,15 +169,16 @@ export function ScrubChart({
     return arr;
   }, [principal, rateBp, addition, maxTicks, scenario]);
 
-  // Y-axis fixed across both scenarios for direct toggle comparison.
-  // Regular scenario's compound active is always >= one-time's compound passive,
-  // so we use the larger to bound the axis identically in both views.
+  // Y-axis bounds include the actual-history overlay (which may dip below
+  // current principal — e.g., past snapshots before recent deposits).
+  const actualBalances = (actualHistory ?? []).map((p) => p.balance);
   const yMax = Math.max(
     compoundPassiveAt(principal, rateBp, maxTicks),
     compoundActiveAt(principal, addition, rateBp, maxTicks),
-    principal * 2
+    principal * 2,
+    ...actualBalances
   );
-  const yMin = principal;
+  const yMin = Math.min(principal, ...actualBalances);
 
   const innerW = VIEWBOX_W - MARGIN.left - MARGIN.right;
   const innerH = VIEWBOX_H - MARGIN.top - MARGIN.bottom;

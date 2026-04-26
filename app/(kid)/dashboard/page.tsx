@@ -43,18 +43,21 @@ export default async function KidDashboardPage({
     .eq('cycle_number', Number(account.cycle_number))
     .order('week_num', { ascending: true });
 
+  // Past-week snapshots only; the current week's "actual" is the live account
+  // total (snapshots aren't rewritten when parent or kid deposits mid-week).
+  const currentTick = Math.min(8, Math.max(0, week));
   const actualHistory: ActualHistoryPoint[] = ((snaps ?? []) as Array<{
     week_num: number;
     free_balance: number;
     experiment_balance: number;
     bonus_balance: number;
-  }>).map((s) => ({
-    tick: Number(s.week_num),
-    balance: Number(s.free_balance) + Number(s.experiment_balance) + Number(s.bonus_balance),
-  }));
-  if (week > 0 && (actualHistory.length === 0 || actualHistory[actualHistory.length - 1]!.tick < week)) {
-    actualHistory.push({ tick: week, balance: total });
-  }
+  }>)
+    .filter((s) => Number(s.week_num) < currentTick)
+    .map((s) => ({
+      tick: Number(s.week_num),
+      balance: Number(s.free_balance) + Number(s.experiment_balance) + Number(s.bonus_balance),
+    }));
+  actualHistory.push({ tick: currentTick, balance: total });
 
   return (
     <main className="page">
@@ -135,13 +138,13 @@ export default async function KidDashboardPage({
 
       <section className="stack-4" style={{ marginBottom: 'var(--sp-5)' }}>
         <ScrubChart
-          initialPrincipal={startingCapital}
+          initialPrincipal={total}
           initialRatePct={ratePct}
           initialMode="weeks"
           initialMaxTicks={8}
           initialAddition={0}
           initialScenario="one-time"
-          initialTick={Math.min(8, Math.max(0, week))}
+          initialTick={currentTick}
           actualHistory={actualHistory}
           actualLabel="🔵 나의 실제"
           hideScenarioTabs
