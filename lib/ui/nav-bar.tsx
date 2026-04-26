@@ -15,6 +15,7 @@ export type NavItem = {
 export const KID_NAV: NavItem[] = [
   { href: '/dashboard', icon: '🏠', label: '홈' },
   { href: '/history', icon: '📊', label: '기록' },
+  { href: '/learn', icon: '💸', label: '학습' },
 ];
 
 export const GUARDIAN_NAV: NavItem[] = [
@@ -22,6 +23,7 @@ export const GUARDIAN_NAV: NavItem[] = [
   { href: '/kid-access', icon: '🔑', label: '코드' },
   { href: '/settings', icon: '⚙️', label: '설정' },
   { href: '/audit', icon: '📋', label: '활동' },
+  { href: '/learn', icon: '💸', label: '학습' },
 ];
 
 export function NavBar({

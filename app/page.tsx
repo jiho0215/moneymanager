@@ -12,12 +12,17 @@ export default function HomePage() {
           가족이 함께 경험하는 <strong>시간의 가치</strong>
         </p>
 
-        <div className="row gap-3" style={{ justifyContent: 'center', marginBottom: 'var(--sp-7)' }}>
+        <div className="row gap-3" style={{ justifyContent: 'center', marginBottom: 'var(--sp-3)', flexWrap: 'wrap' }}>
           <Link href="/signup" className="btn btn-primary btn-lg">
             가족 만들기
           </Link>
           <Link href="/login" className="btn btn-subtle btn-lg">
             로그인
+          </Link>
+        </div>
+        <div style={{ marginBottom: 'var(--sp-7)' }}>
+          <Link href="/learn" className="btn btn-ghost">
+            💸 단리 vs 복리 직접 보기 (가입 없이도) →
           </Link>
         </div>
       </div>
