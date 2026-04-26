@@ -173,7 +173,7 @@ export function ParentWizard({ accountId, kidName }: { accountId: string; kidNam
             <input type="hidden" name="totalWeeks" value={weeks} />
             <input type="hidden" name="ratePct" value={ratePct} />
             <SubmitButton variant="success" pendingText="저장 중...">
-              ✅ 자녀에게 전달하기
+              ✅ 완료
             </SubmitButton>
           </form>
         )}
