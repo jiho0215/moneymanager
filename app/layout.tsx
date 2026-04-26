@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { TopProgressBar } from '@/lib/ui/top-progress';
 
 export const metadata: Metadata = {
   title: 'Compound Learning System',
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           color: '#1a1a1a',
         }}
       >
+        <TopProgressBar />
         {children}
       </body>
     </html>

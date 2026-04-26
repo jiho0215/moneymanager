@@ -1,6 +1,8 @@
 import { getGuardianFamilyView } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
 import { logout } from '@/app/(auth)/login/actions';
+import { SubmitButton } from '@/lib/ui/submit-button';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 function fmt(n: number) { return n.toLocaleString('ko-KR') + '원'; }
@@ -26,7 +28,9 @@ export default async function GuardianHomePage() {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h1 style={{ margin: 0 }}>👨‍👩‍👧 보호자 대시보드</h1>
         <form action={logout}>
-          <button type="submit" style={{ padding: '6px 12px' }}>로그아웃</button>
+          <SubmitButton variant="subtle" pendingText="..." style={{ padding: '6px 12px' }}>
+            로그아웃
+          </SubmitButton>
         </form>
       </header>
 
@@ -35,15 +39,15 @@ export default async function GuardianHomePage() {
       </p>
 
       <nav style={{ display: 'flex', gap: '12px', marginBottom: '2rem' }}>
-        <a href="/kid-access" style={{ padding: '8px 16px', backgroundColor: '#16a34a', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
+        <Link href="/kid-access" style={{ padding: '8px 16px', backgroundColor: '#16a34a', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
           🔑 자녀 로그인 코드
-        </a>
-        <a href="/settings" style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
+        </Link>
+        <Link href="/settings" style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
           ⚙️ 설정
-        </a>
-        <a href="/audit" style={{ padding: '8px 16px', backgroundColor: '#6b7280', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
+        </Link>
+        <Link href="/audit" style={{ padding: '8px 16px', backgroundColor: '#6b7280', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
           📋 활동 기록
-        </a>
+        </Link>
       </nav>
 
       {kids.map((kid) => {

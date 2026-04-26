@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
 import { generateProblem } from '@/lib/domain/mathgen';
@@ -80,9 +81,9 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
         <SubmitButton variant="success" pendingText="확인 중..." style={{ padding: '14px', fontSize: '1.1rem', borderRadius: '8px' }}>
           제출하기
         </SubmitButton>
-        <a href="/dashboard" style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
+        <Link href="/dashboard" style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
           ← 다음에 풀기
-        </a>
+        </Link>
       </form>
     </main>
   );

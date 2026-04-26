@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getMyKidAccount, getCurrentWeekNum } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
 import { logout } from '@/app/(auth)/login/actions';
@@ -28,7 +29,9 @@ export default async function KidDashboardPage() {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h1 style={{ margin: 0 }}>🌱 안녕, {membership.display_name}!</h1>
         <form action={logout}>
-          <button type="submit" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>로그아웃</button>
+          <SubmitButton variant="subtle" pendingText="..." style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+            로그아웃
+          </SubmitButton>
         </form>
       </header>
 
@@ -57,7 +60,7 @@ export default async function KidDashboardPage() {
       <section style={{ padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px', marginBottom: '1.5rem' }}>
         <h2 style={{ marginTop: 0 }}>이번 주 청구</h2>
         {canClaimNow ? (
-          <a
+          <Link
             href="/claim"
             style={{
               display: 'inline-block',
@@ -70,7 +73,7 @@ export default async function KidDashboardPage() {
             }}
           >
             ✨ 산수 풀고 이자 받기
-          </a>
+          </Link>
         ) : (
           <p>{lastClaimed === week ? '이번 주는 이미 청구했어요! 다음 주에 다시 만나요 🌱' : '아직 청구할 수 있는 주가 안 됐어요.'}</p>
         )}
@@ -99,7 +102,7 @@ export default async function KidDashboardPage() {
       </section>
 
       <p style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.85rem', color: '#888' }}>
-        <a href="/history">📊 내 잔액 변화 보기</a>
+        <Link href="/history">📊 내 잔액 변화 보기</Link>
       </p>
     </main>
   );

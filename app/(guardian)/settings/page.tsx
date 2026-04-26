@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getGuardianFamilyView } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
 import { updateSettings, depositToKid, chooseCycleEnd } from './actions';
@@ -73,7 +74,7 @@ export default async function SettingsPage() {
         );
       })}
 
-      <p style={{ marginTop: '2rem', textAlign: 'center' }}><a href="/guardian">← 대시보드로</a></p>
+      <p style={{ marginTop: '2rem', textAlign: 'center' }}><Link href="/guardian">← 대시보드로</Link></p>
     </main>
   );
 }

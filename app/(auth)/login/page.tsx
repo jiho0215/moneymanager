@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { loginGuardian, loginAsKidWithCode } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
 
@@ -56,7 +57,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </section>
 
       <p style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <a href="/signup">처음이신가요? 가족 가입</a>
+        <Link href="/signup">처음이신가요? 가족 가입</Link>
       </p>
     </main>
   );

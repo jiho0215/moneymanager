@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { signupFamily } from './actions';
 import { SubmitButton } from '@/lib/ui/submit-button';
 
@@ -31,7 +32,7 @@ function ErrorAlert({ message, showLoginLink }: { message: string; showLoginLink
         <div style={{ flex: 1 }}>
           <div>{message}</div>
           {showLoginLink && (
-            <a
+            <Link
               href="/login"
               style={{
                 display: 'inline-block',
@@ -45,7 +46,7 @@ function ErrorAlert({ message, showLoginLink }: { message: string; showLoginLink
               }}
             >
               로그인 페이지로 이동 →
-            </a>
+            </Link>
           )}
         </div>
       </div>
@@ -134,7 +135,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
       </form>
 
       <p style={{ marginTop: '1rem', textAlign: 'center', color: '#666' }}>
-        이미 계정이 있으신가요? <a href="/login">로그인</a>
+        이미 계정이 있으신가요? <Link href="/login">로그인</Link>
       </p>
     </main>
   );

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getGuardianFamilyView } from '@/lib/db/queries';
 import { getSupabaseServerClient } from '@/lib/db/client';
 import { redirect } from 'next/navigation';
@@ -82,7 +83,7 @@ export default async function KidAccessPage({ searchParams }: { searchParams: Pr
         </tbody>
       </table>
 
-      <p style={{ marginTop: '2rem', textAlign: 'center' }}><a href="/guardian">← 대시보드로</a></p>
+      <p style={{ marginTop: '2rem', textAlign: 'center' }}><Link href="/guardian">← 대시보드로</Link></p>
     </main>
   );
 }
