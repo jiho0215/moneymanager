@@ -132,7 +132,7 @@ export function GuideCard({ children }: { children: ReactNode }) {
   return (
     <details className="card" style={{ background: 'var(--surface-2)', cursor: 'pointer' }}>
       <summary style={{ fontWeight: 600, fontSize: '0.95rem', listStyle: 'none' }}>
-        💡 어떻게 작동하나요? (눌러서 보기)
+        💡 어떻게 작동하나요?
       </summary>
       <div style={{ marginTop: 'var(--sp-3)', fontSize: '0.92rem', lineHeight: 1.7 }}>{children}</div>
     </details>

@@ -106,8 +106,8 @@ export default async function KidDashboardPage() {
       <GuideCard>
         <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
           <li><strong>저금</strong>: 통장에 들어있는 너의 원금이에요.</li>
-          <li><strong>이자</strong>: 매주 산수 풀고 청구하면 통장 전체가 10% 자라요.</li>
-          <li><strong>매주 일요일</strong>: 가족 시간! 산수 한 문제 풀고 이자 받기.</li>
+          <li><strong>이자</strong>: 통장 전체가 매주 10%씩 자라요.</li>
+          <li><strong>매주 일요일에 청구</strong>: 산수 한 문제 풀고 <strong>이번 주 이자</strong>를 통장에 넣기. 그 주 안에 안 하면 그 주 이자는 사라져요.</li>
         </ul>
       </GuideCard>
     </main>
