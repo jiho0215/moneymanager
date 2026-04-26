@@ -479,6 +479,13 @@ export function ScrubChart() {
         />
       </div>
 
+      {/* Principal vs interest breakdown for compound */}
+      <InterestBreakdown
+        totalCompound={cur.compound}
+        principalContributed={scenario === 'one-time' ? principal : principal + addition * tick}
+        unit={unit}
+      />
+
       {/* Multiplier vs piggy */}
       {cur.piggy > 0 && cur.compound > cur.piggy && (
         <div
@@ -514,6 +521,113 @@ export function ScrubChart() {
         <div className="h2" style={{ marginBottom: 'var(--sp-2)' }}>{milestone.title}</div>
         <div className="muted" style={{ fontSize: '0.95rem' }}>{milestone.sub}</div>
       </div>
+    </div>
+  );
+}
+
+function InterestBreakdown({
+  totalCompound,
+  principalContributed,
+  unit,
+}: {
+  totalCompound: number;
+  principalContributed: number;
+  unit: string;
+}) {
+  const interest = Math.max(0, totalCompound - principalContributed);
+  const interestPct = totalCompound > 0 ? Math.round((interest / totalCompound) * 100) : 0;
+  const principalPct = 100 - interestPct;
+
+  return (
+    <div className="card stack-3">
+      <div className="row-between" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
+        <div>
+          <strong>💰 복리: 너의 돈이 어디서 왔을까?</strong>
+          <div className="soft" style={{ marginTop: 2, fontSize: '0.82rem' }}>
+            합계 <strong style={{ color: 'var(--experiment-deep)' }}>{fmtFull(totalCompound)}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          height: 32,
+          borderRadius: 'var(--r-pill)',
+          overflow: 'hidden',
+          display: 'flex',
+          border: '1px solid var(--border)',
+          background: 'var(--surface-2)',
+        }}
+        role="img"
+        aria-label={`원금 ${principalPct}%, 이자 ${interestPct}%`}
+      >
+        {principalPct > 0 && (
+          <div
+            style={{
+              flex: principalPct,
+              background: 'linear-gradient(90deg, #16a34a 0%, #22c55e 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              transition: 'flex 240ms ease-out',
+            }}
+          >
+            {principalPct >= 12 ? `${principalPct}%` : ''}
+          </div>
+        )}
+        {interestPct > 0 && (
+          <div
+            style={{
+              flex: interestPct,
+              background: 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              transition: 'flex 240ms ease-out',
+            }}
+          >
+            {interestPct >= 12 ? `${interestPct}%` : ''}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
+        <div>
+          <div className="row gap-2" style={{ alignItems: 'center', marginBottom: 4 }}>
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: '#16a34a', borderRadius: 3 }} />
+            <span className="label" style={{ color: 'var(--experiment-deep)' }}>직접 모은 원금</span>
+          </div>
+          <div className="amount" style={{ fontSize: '1.15rem', color: 'var(--experiment-deep)' }}>
+            {fmtFull(principalContributed)}
+          </div>
+        </div>
+        <div>
+          <div className="row gap-2" style={{ alignItems: 'center', marginBottom: 4 }}>
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: '#f59e0b', borderRadius: 3 }} />
+            <span className="label" style={{ color: '#92400e' }}>이자로 받은 돈</span>
+          </div>
+          <div className="amount" style={{ fontSize: '1.15rem', color: '#92400e' }}>
+            +{fmtFull(interest)}
+          </div>
+        </div>
+      </div>
+
+      {interestPct >= 50 && (
+        <div className="soft" style={{ fontSize: '0.85rem', textAlign: 'center', padding: 'var(--sp-2)', background: '#fef3c7', borderRadius: 'var(--r-md)' }}>
+          🎉 이자가 원금보다 많아! 시간이 너 대신 일하고 있어.
+        </div>
+      )}
+      {interestPct < 20 && interestPct > 0 && (
+        <div className="soft" style={{ fontSize: '0.85rem', textAlign: 'center' }}>
+          💡 슬라이더를 더 끌어봐. 시간이 길어지면 이자 비율이 점점 커져.
+        </div>
+      )}
     </div>
   );
 }
