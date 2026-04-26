@@ -11,6 +11,10 @@ const MARGIN = { top: 30, right: 30, bottom: 50, left: 64 };
 function piggyAt(start: number, addition: number, t: number): number {
   return start + addition * t;
 }
+function simpleAt(start: number, rateBp: number, t: number): number {
+  // Simple interest: rate applies only to original principal each tick
+  return start + Math.floor((start * rateBp * t) / 10000);
+}
 function compoundPassiveAt(start: number, rateBp: number, t: number): number {
   let b = start;
   for (let i = 0; i < t; i += 1) b = b + Math.floor((b * rateBp) / 10000);
@@ -99,18 +103,19 @@ export function ScrubChart() {
   }
 
   const series = useMemo(() => {
-    const arr: { t: number; piggy: number; compound: number }[] = [];
+    const arr: { t: number; piggy: number; simple?: number; compound: number }[] = [];
     for (let t = 0; t <= maxTicks; t += 1) {
       if (scenario === 'one-time') {
         arr.push({
           t,
           piggy: principal, // sits flat — no addition, no interest
+          simple: simpleAt(principal, rateBp, t), // 단리: 원금에만 이자 (linear)
           compound: compoundPassiveAt(principal, rateBp, t),
         });
       } else {
         arr.push({
           t,
-          piggy: piggyAt(principal, addition, t), // linear: principal + addition*t
+          piggy: piggyAt(principal, addition, t),
           compound: compoundActiveAt(principal, addition, rateBp, t),
         });
       }
@@ -130,6 +135,10 @@ export function ScrubChart() {
 
   const piggyPath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.piggy)}`).join(' ');
   const compoundPath = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.compound)}`).join(' ');
+  const simplePath =
+    scenario === 'one-time'
+      ? series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(p.t)} ${yScale(p.simple ?? p.piggy)}`).join(' ')
+      : '';
 
   const xTicks = getXTicks(maxTicks);
   const yTicks = [yMin, yMin + (yMax - yMin) * 0.25, yMin + (yMax - yMin) * 0.5, yMin + (yMax - yMin) * 0.75, yMax];
@@ -358,8 +367,11 @@ export function ScrubChart() {
             </g>
           ))}
 
-          {/* Two lines: piggy (loser, dashed) vs compound (winner, solid thick) */}
+          {/* Lines: piggy (bottom dashed) → simple (mid linear, one-time only) → compound (winner) */}
           <path d={piggyPath} fill="none" stroke="#ec4899" strokeWidth={2.5} strokeDasharray="6 4" />
+          {scenario === 'one-time' && simplePath && (
+            <path d={simplePath} fill="none" stroke="#f59e0b" strokeWidth={2.5} strokeDasharray="2 4" />
+          )}
           <path d={compoundPath} fill="none" stroke="#16a34a" strokeWidth={3.5} />
 
           {/* Vertical indicator */}
@@ -375,6 +387,9 @@ export function ScrubChart() {
 
           {/* Dots at current tick for each line */}
           <circle cx={xScale(tick)} cy={yScale(cur.piggy)} r={6} fill="#ec4899" stroke="white" strokeWidth={2} />
+          {scenario === 'one-time' && cur.simple !== undefined && (
+            <circle cx={xScale(tick)} cy={yScale(cur.simple)} r={5} fill="#f59e0b" stroke="white" strokeWidth={2} />
+          )}
           <circle cx={xScale(tick)} cy={yScale(cur.compound)} r={7} fill="#16a34a" stroke="white" strokeWidth={2.5} />
 
           {/* Tick badge */}
@@ -397,6 +412,12 @@ export function ScrubChart() {
             <span style={{ display: 'inline-block', width: 22, borderTop: '3px dashed #ec4899' }} />
             <span><strong>🐷 돼지저금통</strong> <span className="muted">{scenario === 'one-time' ? '이자 없이 그대로' : '이자 없이 적금'}</span></span>
           </span>
+          {scenario === 'one-time' && (
+            <span className="row gap-2" style={{ alignItems: 'center' }}>
+              <span style={{ display: 'inline-block', width: 22, borderTop: '3px dotted #f59e0b' }} />
+              <span><strong>🪙 단리</strong> <span className="muted">원금에만 이자</span></span>
+            </span>
+          )}
           <span className="row gap-2" style={{ alignItems: 'center' }}>
             <span style={{ display: 'inline-block', width: 22, borderTop: '4px solid #16a34a' }} />
             <span><strong>🌳 복리</strong> <span className="muted">{scenario === 'one-time' ? `${ratePct}%씩 자람` : `적금 + ${ratePct}% 이자`}</span></span>
@@ -404,8 +425,8 @@ export function ScrubChart() {
         </div>
       </div>
 
-      {/* Live stats — 2 cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--sp-3)' }}>
+      {/* Live stats — 3 cards in one-time scenario, 2 in regular */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--sp-3)' }}>
         <ScenarioCard
           icon="🐷"
           tint="pink"
@@ -417,6 +438,15 @@ export function ScrubChart() {
           }
           amount={cur.piggy}
         />
+        {scenario === 'one-time' && cur.simple !== undefined && (
+          <ScenarioCard
+            icon="🪙"
+            tint="amber"
+            label="단리"
+            subtitle={`원금에만 ${ratePct}% 이자`}
+            amount={cur.simple}
+          />
+        )}
         <ScenarioCard
           icon="🌳"
           tint="active"
@@ -520,7 +550,7 @@ function ScenarioCard({
   highlight,
 }: {
   icon: string;
-  tint: 'pink' | 'passive' | 'active';
+  tint: 'pink' | 'amber' | 'passive' | 'active';
   label: string;
   subtitle: string;
   amount: number;
@@ -528,6 +558,7 @@ function ScenarioCard({
 }) {
   const styles = {
     pink: { bg: '#fdf2f8', border: '#ec4899', text: '#9d174d' },
+    amber: { bg: '#fef3c7', border: '#f59e0b', text: '#92400e' },
     passive: { bg: '#f0fdf4', border: '#86efac', text: '#15803d' },
     active: { bg: '#dcfce7', border: '#16a34a', text: 'var(--experiment-deep)' },
   } as const;
