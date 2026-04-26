@@ -1,0 +1,45 @@
+{
+  "name": "moneymanager",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Compound Learning System — Family web app for kids to experience compound interest",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "db:types": "supabase gen types typescript --local > lib/db/types.ts",
+    "db:migrate:local": "supabase db reset",
+    "db:migrate:test-reversibility": "node scripts/test-migration-reversibility.mjs"
+  },
+  "dependencies": {
+    "next": "14.2.18",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@supabase/ssr": "0.5.2",
+    "@supabase/supabase-js": "2.46.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.6",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@typescript-eslint/eslint-plugin": "8.13.0",
+    "@typescript-eslint/parser": "8.13.0",
+    "@vitest/coverage-v8": "2.1.4",
+    "eslint": "8.57.1",
+    "eslint-config-next": "14.2.18",
+    "eslint-plugin-no-restricted-imports": "0.0.0",
+    "fast-check": "3.23.1",
+    "typescript": "5.6.3",
+    "vitest": "2.1.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

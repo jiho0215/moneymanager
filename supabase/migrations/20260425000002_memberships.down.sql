@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS memberships CASCADE;
+DROP TYPE IF EXISTS membership_role;
+DROP TYPE IF EXISTS age_tier;

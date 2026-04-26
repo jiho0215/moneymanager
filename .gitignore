@@ -1,0 +1,52 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next
+.next/
+out/
+
+# production
+build/
+dist/
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# vercel
+.vercel
+
+# environment
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.example
+
+# testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# supabase
+supabase/.branches
+supabase/.temp
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

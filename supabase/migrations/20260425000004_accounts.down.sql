@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS accounts CASCADE;
+DROP TYPE IF EXISTS cycle_status;

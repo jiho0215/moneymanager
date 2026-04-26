@@ -22,7 +22,7 @@ revisionNote: "v2 — multi-agent consensus reviewed (5 agents: requirements, ar
 
 ### 1.2 Success Criteria
 
-- [ ] **잔액 성장 경험**: 8주차 종료 시 실험영역 잔액 ≥ 시작 자금의 2배 (10,000 → 21,435원, `floor(10000 × 1.10⁸)` step-floored 결과)
+- [ ] **잔액 성장 경험**: 8주차 종료 시 실험영역 잔액 ≥ 시작 자금의 2배 (10,000 → 21,434원, per-week floor 결과 (T1 implementation discovery: end-floored 21,435가 아닌 step-floored 21,434가 correct))
 - [ ] **주간 의식 지속**: 자녀가 8주 중 **≥ 7주 청구 완수**, **2주 연속 누락 없음** (관측 가능, 자동 측정)
 - [ ] **자유 영역 인식**: 자녀가 자유영역(70-80%)에서 통제받지 않는다고 느낌 (자기보고 1회)
 - [ ] **누락 주 복원성**: 청구 누락 시 이자 누적, **최대 4주분까지** carry-over. 5주 이상 누락된 이자는 expire (영구 소멸 — 의식의 가치 보존)
